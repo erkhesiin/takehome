@@ -158,10 +158,17 @@ Harbor writes job outputs under `jobs/` by default. Useful files are:
 ```text
 jobs/<job-name>/<trial-id>/result.json
 jobs/<job-name>/<trial-id>/verifier/reward.txt
-jobs/<job-name>/<trial-id>/verifier/pytest.log
 jobs/<job-name>/<trial-id>/verifier/test-stdout.txt
-jobs/<job-name>/<trial-id>/agent/oracle.txt
+jobs/<job-name>/<trial-id>/artifacts/solution/dtr.py
+jobs/<job-name>/<trial-id>/artifacts/manifest.json
+jobs/<job-name>/<trial-id>/agent/<agent-name>.txt
+jobs/<job-name>/<trial-id>/agent/trajectory.json
 ```
+
+`verifier/test-stdout.txt` mirrors the pytest/verifier output and is the first
+place to look for a failing reward. `artifacts/solution/dtr.py` is the file the
+agent wrote, when it exists; if it does not, `artifacts/manifest.json` records
+the failed collection.
 
 You can also start Harbor's viewer:
 
@@ -260,10 +267,25 @@ need it for setup and model API calls.
 If the reward is `0.0`, inspect:
 
 ```text
-jobs/<job-name>/<trial-id>/verifier/pytest.log
 jobs/<job-name>/<trial-id>/verifier/test-stdout.txt
-jobs/<job-name>/<trial-id>/agent/oracle.txt
+jobs/<job-name>/<trial-id>/artifacts/solution/dtr.py
+jobs/<job-name>/<trial-id>/artifacts/manifest.json
+jobs/<job-name>/<trial-id>/agent/<agent-name>.txt
+jobs/<job-name>/<trial-id>/agent/trajectory.json
 ```
+
+If one agent gets `0.0` on every rollout while another agent consistently gets
+`1.0`, inspect one failing `test-stdout.txt` first. The most common
+all-or-nothing failures are: no file at `/solution/dtr.py`, `compute_dtr`
+missing at module top level, returning a `torch.Tensor` instead of a Python
+`float`, or implementing adjacent-layer JSD instead of comparing every layer to
+the final layer.
+
+If `test-stdout.txt` is empty, inspect the agent log. A trace that repeatedly
+says it will create `/solution/dtr.py` but has no file-writing command means the
+agent never submitted a solution. With Codex through OpenRouter, also check for
+`wss://openrouter.ai/api/v1/responses` 404 websocket errors in `agent/codex.txt`;
+that indicates a provider/CLI compatibility issue rather than a verifier bug.
 
 If Torch reports `Illegal instruction`, make sure you rebuilt the image after
 the conservative CPU-dispatch environment variables were added.

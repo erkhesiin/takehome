@@ -88,5 +88,9 @@ Those configs run 10 attempts each with Claude Code/Opus 4.7 at `high`
 reasoning effort and Codex/GPT-5.5 at `xhigh` reasoning effort.
 
 Results are written under `jobs/<job-name>/<trial-id>/`. The most useful files
-are `verifier/reward.txt`, `verifier/pytest.log`, `verifier/test-stdout.txt`,
-and `agent/oracle.txt`.
+are `verifier/reward.txt`, `verifier/test-stdout.txt`,
+`artifacts/solution/dtr.py`, `artifacts/manifest.json`,
+`agent/<agent-name>.txt`, and `agent/trajectory.json`. The verifier output is
+mirrored into `verifier/test-stdout.txt` for pulled jobs, and the agent's
+submitted implementation is collected into `artifacts/solution/dtr.py` when it
+exists.

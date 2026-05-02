@@ -10,4 +10,4 @@ export NUMEXPR_NUM_THREADS=1
 mkdir -p /logs/verifier
 echo "0" > /logs/verifier/reward.txt
 
-python /tests/run_verifier.py > /logs/verifier/pytest.log 2>&1 || true
+python /tests/run_verifier.py 2>&1 | tee /logs/verifier/pytest.log || true

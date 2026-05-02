@@ -6,6 +6,12 @@ Implement the Deep-Thinking Ratio (DTR) algorithm from the paper `DTR_Paper.pdf`
 /solution/dtr.py
 ```
 
+Create this exact absolute path. Do not place the implementation in the current
+directory, in `solution/dtr.py`, or in a notebook/script with a different name.
+Your first required action is to create `/solution/dtr.py`; the task is not
+complete until `test -f /solution/dtr.py` succeeds. The algorithm below is
+sufficient, so reading or extracting the PDF is optional.
+
 Your file must define the following function:
 
 ```python
@@ -15,10 +21,14 @@ def compute_dtr(
     hidden_states: list[torch.Tensor],
     unembedding_matrix: torch.Tensor,
     threshold: float = 0.01,
-    depth_fraction: float = 0.25
+    depth_fraction: float = 0.25,
 ) -> float:
     ...
 ```
+
+The verifier imports this function directly. Do not rely on `if __name__ ==
+"__main__"` code, printed output, command-line arguments, or files other than
+`/solution/dtr.py`.
 
 ### Inputs
 * `hidden_states`: A list of PyTorch tensors, one for each transformer layer ($L$ total layers). Each tensor has shape `(seq_len, hidden_dim)`. The last tensor in the list represents the final layer.
@@ -43,6 +53,32 @@ You are computing the ratio of generated tokens that require "deep thinking." Fo
    $c_t \ge \lceil (1 - \text{depth\_fraction}) \times L \rceil$
 5. **Return:**
    Return a Python `float` in `[0.0, 1.0]` representing `deep_thinking_token_count / seq_len`.
+
+### Implementation Checklist
+- Write `/solution/dtr.py` before doing optional exploration.
+- Do not finish after describing a plan; finish only after `/solution/dtr.py`
+  exists.
+- Define `compute_dtr` at module top level with the exact signature above.
+- Return a built-in Python `float`, not a `torch.Tensor`.
+- Compare each layer's distribution to the **final layer** distribution. Do not compute JSD only between adjacent layers.
+- Use the earliest layer whose cumulative-minimum JSD is `<= threshold`.
+- Treat layer numbers as 1-based for the exit-layer comparison.
+- Use `ceil((1 - depth_fraction) * L)` for the deep-layer boundary.
+- Keep all tensors on CPU; do not load models or weights.
+- Before your final response, run `test -f /solution/dtr.py` and the import
+  smoke test below.
+
+You can smoke-test importability with:
+
+```bash
+python - <<'PY'
+import importlib.util
+spec = importlib.util.spec_from_file_location("dtr", "/solution/dtr.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+assert hasattr(module, "compute_dtr")
+PY
+```
 
 ### Constraints
 - Use only PyTorch and the Python standard library.
