@@ -1,0 +1,49 @@
+{
+    "id": "7167e38a-a21f-4231-a943-0ec3c1bfc303",
+    "started_at": "2026-05-02T15:53:06.517459",
+    "finished_at": "2026-05-02T16:01:41.907420",
+    "n_total_trials": 10,
+    "stats": {
+        "n_trials": 10,
+        "n_errors": 0,
+        "evals": {
+            "codex__gpt-5.5__adhoc": {
+                "n_trials": 10,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.0
+                    }
+                ],
+                "pass_at_k": {
+                    "2": 0.0,
+                    "4": 0.0,
+                    "5": 0.0,
+                    "8": 0.0,
+                    "10": 0.0
+                },
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "deep-thinking-ratio__AySGkUu",
+                            "deep-thinking-ratio__9J75ERe",
+                            "deep-thinking-ratio__Jz9EfLc",
+                            "deep-thinking-ratio__oQzwmDA",
+                            "deep-thinking-ratio__BgZSNZM",
+                            "deep-thinking-ratio__UjfgPuG",
+                            "deep-thinking-ratio__xtGfe4a",
+                            "deep-thinking-ratio__HjGqPi5",
+                            "deep-thinking-ratio__oZsxf3o",
+                            "deep-thinking-ratio__BuifWWY"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        },
+        "n_input_tokens": 405991,
+        "n_cache_tokens": 170496,
+        "n_output_tokens": 38600,
+        "cost_usd": 2.420723
+    }
+}
