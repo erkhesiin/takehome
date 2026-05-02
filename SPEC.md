@@ -20,6 +20,10 @@ implementation against 7 deterministic test cases, producing a graded reward in 
 ├── README.md
 ├── SPEC.md                          ← this file
 ├── writeup.md                       ← design decisions and rollout analysis
+├── configs/
+│   └── rollouts/
+│       ├── claude-opus-4-7-high.yaml
+│       └── codex-gpt-5-5-xhigh-openrouter.yaml
 └── tasks/
     └── deep-thinking-ratio/
         ├── instruction.md           ← agent-facing task description
@@ -116,10 +120,11 @@ DTR = count(is_deep_thinking) / seq_len
 
 `tests/test.sh` is the Harbor verifier script. It:
 
-1. Installs `uv` and runs `pytest` via `uvx`
-2. Calls `tests/test_dtr.py`
-3. Counts `PASSED` vs total `test_case_*` functions
-4. Writes `reward = PASSED / TOTAL` to `/logs/verifier/reward.txt`
+1. Creates `/logs/verifier/reward.txt` with a default reward of `0`
+2. Runs `python /tests/run_verifier.py`
+3. Calls `pytest` on `/tests/test_dtr.py`
+4. Counts passed test calls out of the seven deterministic cases
+5. Writes `reward = PASSED / 7` to `/logs/verifier/reward.txt`
 
 ### Reward
 
@@ -257,8 +262,16 @@ export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 
 ### Running rollouts
 
-With both CLIs configured, run Harbor against each agent. Rollout outputs are written
-to `jobs/` automatically.
+With both CLIs configured, run Harbor against each agent. Rollout outputs are
+written to `jobs/` automatically. The checked-in job configs implement the
+required model/reasoning tiers from `Hillclimb_Take-Home.pdf`:
+
+```bash
+harbor run -c configs/rollouts/claude-opus-4-7-high.yaml --yes
+harbor run -c configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml --yes
+```
+
+Equivalent explicit commands:
 
 ```bash
 # 10 rollouts — Claude Code, Opus 4.7, high reasoning

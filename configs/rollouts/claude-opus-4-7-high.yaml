@@ -1,0 +1,13 @@
+job_name: dtr-claude-opus-4-7-high
+jobs_dir: jobs
+n_attempts: 10
+n_concurrent_trials: 2
+
+agents:
+  - name: claude-code
+    model_name: anthropic/claude-opus-4-7
+    kwargs:
+      reasoning_effort: high
+
+tasks:
+  - path: tasks/deep-thinking-ratio

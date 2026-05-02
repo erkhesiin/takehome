@@ -1,0 +1,16 @@
+job_name: dtr-codex-gpt-5-5-xhigh
+jobs_dir: jobs
+n_attempts: 10
+n_concurrent_trials: 2
+
+agents:
+  - name: codex
+    model_name: gpt-5.5
+    kwargs:
+      reasoning_effort: xhigh
+    env:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      OPENAI_BASE_URL: "${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}"
+
+tasks:
+  - path: tasks/deep-thinking-ratio

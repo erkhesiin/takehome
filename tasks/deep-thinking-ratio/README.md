@@ -65,14 +65,24 @@ Run Codex with an OpenRouter key:
 export OPENROUTER_API_KEY="sk-or-..."
 export OPENAI_API_KEY="$OPENROUTER_API_KEY"
 export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
 ```
 
 Run repeated attempts:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL" --n-attempts 10 --n-concurrent 2
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL" --n-attempts 10 --n-concurrent 2
 ```
+
+The required take-home rollout matrix is also available as Harbor job configs:
+
+```bash
+harbor run -c configs/rollouts/claude-opus-4-7-high.yaml --yes
+harbor run -c configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml --yes
+```
+
+Those configs run 10 attempts each with Claude Code/Opus 4.7 at `high`
+reasoning effort and Codex/GPT-5.5 at `xhigh` reasoning effort.
 
 Results are written under `jobs/<job-name>/<trial-id>/`. The most useful files
 are `verifier/reward.txt`, `verifier/pytest.log`, `verifier/test-stdout.txt`,
