@@ -59,16 +59,19 @@ harbor run -p tasks/deep-thinking-ratio --agent oracle --force-build
 
 Expected reward: `1.0`.
 
-Run Codex:
+Run Codex with an OpenRouter key:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
+export OPENROUTER_API_KEY="sk-or-..."
+export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
 ```
 
 Run repeated attempts:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --n-attempts 10 --n-concurrent 2
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL" --n-attempts 10 --n-concurrent 2
 ```
 
 Results are written under `jobs/<job-name>/<trial-id>/`. The most useful files

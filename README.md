@@ -69,18 +69,22 @@ harbor run -p tasks/deep-thinking-ratio --agent oracle
 
 ## Run A Real Agent
 
-Codex example:
+Codex with an OpenRouter key:
 
 ```bash
-export OPENAI_API_KEY="sk-..."
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
+export OPENROUTER_API_KEY="sk-or-..."
+export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
 ```
 
 PowerShell:
 
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
+$env:OPENROUTER_API_KEY = "sk-or-..."
+$env:OPENAI_API_KEY = $env:OPENROUTER_API_KEY
+$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY --agent-env OPENAI_BASE_URL=$env:OPENAI_BASE_URL
 ```
 
 Claude Code example:
@@ -93,7 +97,7 @@ Run repeated attempts with `--n-attempts`. `--n-concurrent` controls how many
 trials run at once.
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --n-attempts 10 --n-concurrent 2
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL" --n-attempts 10 --n-concurrent 2
 ```
 
 ## Run All Local Tasks
@@ -148,7 +152,25 @@ Harbor runs Codex inside the task container with `CODEX_HOME=/logs/agent`, so
 your local `~/.codex/config.toml` is not automatically used. Pass credentials
 with `--agent-env`.
 
-Direct OpenAI:
+OpenRouter:
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."
+export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
+```
+
+PowerShell:
+
+```powershell
+$env:OPENROUTER_API_KEY = "sk-or-..."
+$env:OPENAI_API_KEY = $env:OPENROUTER_API_KEY
+$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY --agent-env OPENAI_BASE_URL=$env:OPENAI_BASE_URL
+```
+
+Direct OpenAI, if you have an OpenAI key instead:
 
 ```bash
 export OPENAI_API_KEY="sk-..."
@@ -160,22 +182,6 @@ PowerShell:
 ```powershell
 $env:OPENAI_API_KEY = "sk-..."
 harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
-```
-
-OpenRouter through Codex's OpenAI-compatible path:
-
-```bash
-export OPENAI_API_KEY="sk-or-..."
-export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
-```
-
-PowerShell:
-
-```powershell
-$env:OPENAI_API_KEY = "sk-or-..."
-$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY --agent-env OPENAI_BASE_URL=$env:OPENAI_BASE_URL
 ```
 
 ## Claude Code Credentials
