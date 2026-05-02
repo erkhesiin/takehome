@@ -72,7 +72,15 @@ harbor run -p tasks/deep-thinking-ratio --agent oracle
 Codex example:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model openai/gpt-5.5
+export OPENAI_API_KEY="sk-..."
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
+```
+
+PowerShell:
+
+```powershell
+$env:OPENAI_API_KEY = "sk-..."
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
 ```
 
 Claude Code example:
@@ -85,7 +93,7 @@ Run repeated attempts with `--n-attempts`. `--n-concurrent` controls how many
 trials run at once.
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model openai/gpt-5.5 --n-attempts 10 --n-concurrent 2
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --n-attempts 10 --n-concurrent 2
 ```
 
 ## Run All Local Tasks
@@ -134,28 +142,45 @@ $env:PYTHONIOENCODING = "utf-8"
 harbor check tasks/deep-thinking-ratio
 ```
 
-## OpenRouter Setup
+## Codex Credentials
 
-Codex uses OpenAI-compatible `/v1`:
+Harbor runs Codex inside the task container with `CODEX_HOME=/logs/agent`, so
+your local `~/.codex/config.toml` is not automatically used. Pass credentials
+with `--agent-env`.
+
+Direct OpenAI:
 
 ```bash
-export OPENROUTER_API_KEY="sk-or-..."
+export OPENAI_API_KEY="sk-..."
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
 ```
 
-Configure `~/.codex/config.toml`:
+PowerShell:
 
-```toml
-model = "openai/gpt-5.5"
-model_provider = "openrouter"
-
-[model_providers.openrouter]
-name = "OpenRouter"
-base_url = "https://openrouter.ai/api/v1"
-env_key = "OPENROUTER_API_KEY"
-wire_api = "chat"
+```powershell
+$env:OPENAI_API_KEY = "sk-..."
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
 ```
 
-Claude Code uses OpenRouter's Anthropic skin without `/v1`:
+OpenRouter through Codex's OpenAI-compatible path:
+
+```bash
+export OPENAI_API_KEY="sk-or-..."
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
+```
+
+PowerShell:
+
+```powershell
+$env:OPENAI_API_KEY = "sk-or-..."
+$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY --agent-env OPENAI_BASE_URL=$env:OPENAI_BASE_URL
+```
+
+## Claude Code Credentials
+
+Claude Code with OpenRouter uses OpenRouter's Anthropic skin without `/v1`:
 
 ```bash
 export OPENROUTER_API_KEY="sk-or-..."
@@ -176,6 +201,13 @@ $env:ANTHROPIC_API_KEY = ""
 ## Troubleshooting
 
 If Docker reuses an old image after task changes, rerun with `--force-build`.
+
+If a real agent exits with `NonZeroAgentExitCodeError`, inspect its command
+logs under `jobs/<job-name>/<trial-id>/agent/`. This usually means the agent
+CLI failed before verification, for example from missing API credentials,
+model/provider configuration, lack of network access, or a command/runtime
+error. The task leaves internet enabled because installed agents such as Codex
+need it for setup and model API calls.
 
 If the reward is `0.0`, inspect:
 

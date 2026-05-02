@@ -171,7 +171,11 @@ Base: `python:3.11-slim`
 Packages: `torch==2.3.1` (CPU wheel), `pytest==8.4.1`
 CPU dispatch is pinned to conservative single-threaded settings to avoid
 architecture-specific illegal-instruction failures in optimized Torch kernels.
-No GPU, no internet access at runtime.
+No GPU. Internet is enabled so installed CLI agents such as Codex can install
+their runtime and reach model APIs; the task instructions still forbid loading
+or downloading real model weights as part of the solution.
+The image pre-creates `/solution` as writable so non-oracle agents can create
+`/solution/dtr.py`.
 
 ### Directory layout inside the container at verifier time
 
@@ -195,7 +199,7 @@ No GPU, no internet access at runtime.
 | Memory | 2048 MB |
 | Storage | 10240 MB |
 | GPUs | 0 |
-| Internet | disabled |
+| Internet | enabled |
 | Agent timeout | 600s |
 | Verifier timeout | 120s |
 
@@ -240,24 +244,13 @@ show `ANTHROPIC_AUTH_TOKEN` and `https://openrouter.ai/api`.
 
 ### OpenRouter setup — Codex CLI
 
-Codex is OpenAI-compatible and uses the standard `/v1` endpoint (opposite of Claude Code).
-Add an OpenRouter provider profile to `~/.codex/config.toml`:
-
-```toml
-model = "openai/gpt-5.5"
-model_provider = "openrouter"
-
-[model_providers.openrouter]
-name = "OpenRouter"
-base_url = "https://openrouter.ai/api/v1"   # /v1 required here
-env_key = "OPENROUTER_API_KEY"
-wire_api = "chat"
-```
-
-Then set your key:
+Harbor runs Codex inside the task container with `CODEX_HOME=/logs/agent`, so
+local `~/.codex/config.toml` is not automatically used. Pass OpenRouter through
+Codex's OpenAI-compatible path:
 
 ```bash
-export OPENROUTER_API_KEY="sk-or-..."
+export OPENAI_API_KEY="sk-or-..."
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
 ---
@@ -273,15 +266,19 @@ harbor run \
   -p tasks/deep-thinking-ratio \
   --agent claude-code \
   --model anthropic/claude-opus-4-7 \
-  --n 10 \
+  --n-attempts 10 \
+  --n-concurrent 2 \
   --agent-kwarg reasoning_effort=high
 
 # 10 rollouts — Codex, GPT-5.5, xhigh reasoning
 harbor run \
   -p tasks/deep-thinking-ratio \
   --agent codex \
-  --model openai/gpt-5.5 \
-  --n 10 \
+  --model gpt-5.5 \
+  --n-attempts 10 \
+  --n-concurrent 2 \
+  --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" \
+  --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL" \
   --agent-kwarg reasoning_effort=xhigh
 ```
 

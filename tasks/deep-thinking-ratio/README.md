@@ -8,11 +8,13 @@ expected deliverable is a single importable file at `/solution/dtr.py` defining
 ## Environment
 
 The task uses `python:3.11-slim` with `torch==2.3.1` and `pytest==8.4.1`
-installed at image build time. Runtime internet is disabled. The task is CPU
+installed at image build time. Runtime internet is enabled so installed CLI
+agents such as Codex can set themselves up and call model APIs. The task is CPU
 only with 2 CPUs, 2048 MB RAM, 10240 MB storage, a 600 second agent timeout,
 and a 120 second verifier timeout. Torch is configured for conservative
 single-threaded CPU dispatch to avoid host-specific illegal-instruction
-failures from optimized native kernels.
+failures from optimized native kernels. The image pre-creates writable
+`/solution` because agents are expected to place `/solution/dtr.py` there.
 
 ## Verifier
 
@@ -60,13 +62,13 @@ Expected reward: `1.0`.
 Run Codex:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model openai/gpt-5.5
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
 ```
 
 Run repeated attempts:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model openai/gpt-5.5 --n-attempts 10 --n-concurrent 2
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --n-attempts 10 --n-concurrent 2
 ```
 
 Results are written under `jobs/<job-name>/<trial-id>/`. The most useful files
