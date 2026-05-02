@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 
 TOTAL_CASES = 7
 REWARD_PATH = Path("/logs/verifier/reward.txt")
@@ -18,6 +16,10 @@ class PassCounter:
 
 def main() -> int:
     REWARD_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REWARD_PATH.write_text("0\n")
+
+    import pytest
+
     counter = PassCounter()
 
     try:
