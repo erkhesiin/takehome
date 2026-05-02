@@ -281,6 +281,10 @@ missing at module top level, returning a `torch.Tensor` instead of a Python
 `float`, or implementing adjacent-layer JSD instead of comparing every layer to
 the final layer.
 
+If `artifacts/solution/dtr.py` is present but zero bytes, the agent only created
+a placeholder. The Codex trace may show a command such as `touch
+/solution/dtr.py` followed by no implementation write.
+
 If `test-stdout.txt` is empty, inspect the agent log. A trace that repeatedly
 says it will create `/solution/dtr.py` but has no file-writing command means the
 agent never submitted a solution. With Codex through OpenRouter, also check for

@@ -94,3 +94,6 @@ are `verifier/reward.txt`, `verifier/test-stdout.txt`,
 mirrored into `verifier/test-stdout.txt` for pulled jobs, and the agent's
 submitted implementation is collected into `artifacts/solution/dtr.py` when it
 exists.
+
+If that artifact is present but zero bytes, the agent created a placeholder
+instead of submitting an implementation.

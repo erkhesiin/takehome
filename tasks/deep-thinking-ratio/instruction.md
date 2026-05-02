@@ -8,9 +8,11 @@ Implement the Deep-Thinking Ratio (DTR) algorithm from the paper `DTR_Paper.pdf`
 
 Create this exact absolute path. Do not place the implementation in the current
 directory, in `solution/dtr.py`, or in a notebook/script with a different name.
-Your first required action is to create `/solution/dtr.py`; the task is not
-complete until `test -f /solution/dtr.py` succeeds. The algorithm below is
-sufficient, so reading or extracting the PDF is optional.
+Your first file-writing action should write the complete implementation to
+`/solution/dtr.py`. Do not use `touch`, do not create an empty placeholder file,
+and do not finish with an empty or partial module. The task is not complete
+until `/solution/dtr.py` is non-empty and defines `compute_dtr`. The algorithm
+below is sufficient, so reading or extracting the PDF is optional.
 
 Your file must define the following function:
 
@@ -55,9 +57,10 @@ You are computing the ratio of generated tokens that require "deep thinking." Fo
    Return a Python `float` in `[0.0, 1.0]` representing `deep_thinking_token_count / seq_len`.
 
 ### Implementation Checklist
-- Write `/solution/dtr.py` before doing optional exploration.
+- Write the full implementation in `/solution/dtr.py` before doing optional
+  exploration.
 - Do not finish after describing a plan; finish only after `/solution/dtr.py`
-  exists.
+  exists and contains `def compute_dtr`.
 - Define `compute_dtr` at module top level with the exact signature above.
 - Return a built-in Python `float`, not a `torch.Tensor`.
 - Compare each layer's distribution to the **final layer** distribution. Do not compute JSD only between adjacent layers.
@@ -65,8 +68,8 @@ You are computing the ratio of generated tokens that require "deep thinking." Fo
 - Treat layer numbers as 1-based for the exit-layer comparison.
 - Use `ceil((1 - depth_fraction) * L)` for the deep-layer boundary.
 - Keep all tensors on CPU; do not load models or weights.
-- Before your final response, run `test -f /solution/dtr.py` and the import
-  smoke test below.
+- Before your final response, run `test -s /solution/dtr.py`, check that the
+  file contains `def compute_dtr`, and run the import smoke test below.
 
 You can smoke-test importability with:
 
