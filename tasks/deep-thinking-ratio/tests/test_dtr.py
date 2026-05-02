@@ -7,6 +7,14 @@ import pytest
 from dtr_reference import compute_dtr as reference_compute_dtr
 from test_cases import CASES, make_case
 
+try:
+    import torch
+
+    torch.set_num_threads(1)
+    torch.backends.mkldnn.enabled = False
+except Exception:
+    pass
+
 
 def load_agent_compute_dtr():
     path = Path("/solution/dtr.py")

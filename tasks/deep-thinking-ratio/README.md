@@ -10,7 +10,9 @@ expected deliverable is a single importable file at `/solution/dtr.py` defining
 The task uses `python:3.11-slim` with `torch==2.3.1` and `pytest==8.4.1`
 installed at image build time. Runtime internet is disabled. The task is CPU
 only with 2 CPUs, 2048 MB RAM, 10240 MB storage, a 600 second agent timeout,
-and a 120 second verifier timeout.
+and a 120 second verifier timeout. Torch is configured for conservative
+single-threaded CPU dispatch to avoid host-specific illegal-instruction
+failures from optimized native kernels.
 
 ## Verifier
 
@@ -47,7 +49,26 @@ tasks/deep-thinking-ratio/
 
 ## Running
 
+From the repo root, run the oracle/reference solution:
+
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent oracle
+harbor run -p tasks/deep-thinking-ratio --agent oracle --force-build
+```
+
+Expected reward: `1.0`.
+
+Run Codex:
+
+```bash
 harbor run -p tasks/deep-thinking-ratio --agent codex --model openai/gpt-5.5
 ```
+
+Run repeated attempts:
+
+```bash
+harbor run -p tasks/deep-thinking-ratio --agent codex --model openai/gpt-5.5 --n-attempts 10 --n-concurrent 2
+```
+
+Results are written under `jobs/<job-name>/<trial-id>/`. The most useful files
+are `verifier/reward.txt`, `verifier/pytest.log`, `verifier/test-stdout.txt`,
+and `agent/oracle.txt`.

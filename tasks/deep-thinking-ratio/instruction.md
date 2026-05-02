@@ -41,7 +41,9 @@ The algorithm is:
 
 Constraints:
 
-- Use PyTorch only for tensor/math operations.
+- Use only PyTorch and the Python standard library for tensor/math operations.
+- Inputs are small; prioritize a clear CPU implementation over vectorized
+  performance.
 - Do not use scipy, sklearn, transformer libraries, downloaded models, or real
   model weights.
 - Do not require CUDA.

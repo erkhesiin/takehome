@@ -102,7 +102,7 @@ DTR = count(is_deep_thinking) / seq_len
 
 ### Constraints on the agent's implementation
 
-- PyTorch only — no scipy, no sklearn, no other ML libraries
+- PyTorch and Python standard library only — no scipy, no sklearn, no other ML libraries
 - Must run on CPU (no CUDA)
 - Must not import or load any real language model or weights
 - Must be a single file at `/solution/dtr.py`
@@ -168,7 +168,9 @@ hardcoded, so they remain correct if torch's RNG output ever changes.
 ### Docker image
 
 Base: `python:3.11-slim`
-Packages: `torch==2.3.1` (CPU wheel)
+Packages: `torch==2.3.1` (CPU wheel), `pytest==8.4.1`
+CPU dispatch is pinned to conservative single-threaded settings to avoid
+architecture-specific illegal-instruction failures in optimized Torch kernels.
 No GPU, no internet access at runtime.
 
 ### Directory layout inside the container at verifier time
