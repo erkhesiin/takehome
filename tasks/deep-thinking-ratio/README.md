@@ -39,6 +39,7 @@ tasks/deep-thinking-ratio/
 │   └── solve.sh
 └── tests/
     ├── test.sh
+    ├── run_verifier.py
     ├── test_dtr.py
     ├── test_cases.py
     └── dtr_reference.py
