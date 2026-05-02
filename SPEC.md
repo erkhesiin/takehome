@@ -37,7 +37,7 @@ implementation against 7 deterministic test cases, producing a graded reward in 
             ├── test.sh              ← Harbor verifier entrypoint
             ├── test_dtr.py          ← pytest file (one function per test case)
             ├── test_cases.py        ← deterministic test case generator
-            └── dtr_reference.py     ← copy of reference solution for verifier use
+            └── dtr_reference.py     ← verifier reference implementation
 ```
 
 ---
@@ -53,26 +53,36 @@ def compute_dtr(
     hidden_states: list[torch.Tensor],   # L tensors of shape (seq_len, hidden_dim)
     unembedding_matrix: torch.Tensor,    # shape (vocab_size, hidden_dim)
     threshold: float = 0.01,
+    depth_fraction: float = 0.25,
 ) -> float:
     ...
 ```
 
-The function takes transformer hidden states from L layers and returns a float in
-[0.0, 1.0] representing the fraction of tokens that are "deep-thinking."
+The function takes transformer hidden states from L layers, a logit-lens
+unembedding matrix, a JSD threshold, and a `depth_fraction`. It returns a float
+in [0.0, 1.0] representing the fraction of tokens whose predicted distribution
+only stabilizes near the end of the network.
 
 ### Algorithm (ground truth)
 
 The DTR algorithm has five steps:
 
 **Step 1 — Logit lens projection**
-For each layer `i`, project its hidden states through the unembedding matrix and apply softmax:
+For each layer `l`, project hidden states through the unembedding matrix and
+apply softmax:
 ```
-logits_i = hidden_states[i] @ unembedding_matrix.T   # (seq_len, vocab_size)
-probs_i  = softmax(logits_i, dim=-1)
+logits_l = hidden_states[l] @ unembedding_matrix.T   # (seq_len, vocab_size)
+probs_l  = softmax(logits_l, dim=-1)
 ```
 
-**Step 2 — Jensen-Shannon Divergence between consecutive layers**
-For each pair of adjacent layers `(i, i+1)` and each token position `t`:
+The final layer distribution is the target distribution for each token:
+```
+target_t = probs_L[t]
+```
+
+**Step 2 — Jensen-Shannon Divergence against the final layer**
+For each layer `l` and token position `t`, compute JSD between the final-layer
+distribution and the current layer distribution:
 ```
 M = 0.5 * (P + Q)
 JSD(P, Q) = 0.5 * KL(P || M) + 0.5 * KL(Q || M)
@@ -80,23 +90,26 @@ JSD(P, Q) = 0.5 * KL(P || M) + 0.5 * KL(Q || M)
 Use natural log. JSD is bounded in [0, ln(2)] ≈ [0, 0.693].
 Add epsilon (1e-10) inside logs for numerical stability.
 
-This produces a matrix of shape `(L-1, seq_len)` — one JSD value per layer
-transition per token.
+This produces a matrix of shape `(L, seq_len)` — one JSD value per layer per
+token. The final layer has JSD 0 against itself.
 
-**Step 3 — Late regime identification**
-Define the late regime as the last 25% of layer transitions, with a minimum of 1:
+**Step 3 — Exit layer identification**
+For each token, compute the earliest 1-based layer index whose cumulative
+minimum JSD is less than or equal to `threshold`:
 ```
-n_transitions = L - 1
-n_late = max(1, floor(n_transitions * 0.25))
-late_jsd = jsd_matrix[-n_late:]   # shape (n_late, seq_len)
+cummin_jsd[l, t] = min(jsd_matrix[0:l+1, t])
+c_t = earliest l where cummin_jsd[l, t] <= threshold
 ```
+If the threshold is never met, default the exit layer to `L`. Because the final
+layer is compared with itself, well-formed inputs normally meet the threshold by
+the final layer.
 
 **Step 4 — Deep-thinking token classification**
-A token at position `t` is a deep-thinking token if its maximum JSD across the
-late regime exceeds the threshold:
+A token is deep-thinking if its exit layer occurs in the final
+`depth_fraction` portion of the network:
 ```
-max_late_jsd = late_jsd.max(dim=0)        # shape (seq_len,)
-is_deep_thinking = max_late_jsd > threshold
+depth_start = ceil((1 - depth_fraction) * L)
+is_deep_thinking_t = c_t >= depth_start
 ```
 
 **Step 5 — Ratio**
@@ -148,23 +161,23 @@ hardcoded, so they remain correct if torch's RNG output ever changes.
 
 | # | Name | Seed | L | seq_len | hidden_dim | vocab_size | threshold | What it tests |
 |---|------|------|---|---------|------------|------------|-----------|---------------|
-| 1 | `all_deep_thinking` | 0 | 8 | 10 | 32 | 64 | 0.01 | Late-layer divergence → DTR ≈ 1.0 |
-| 2 | `no_deep_thinking` | 1 | 8 | 10 | 32 | 64 | 0.01 | Near-zero JSD everywhere → DTR ≈ 0.0 |
+| 1 | `all_deep_thinking` | 0 | 8 | 10 | 32 | 64 | 0.01 | Final distribution reached only at the final layer → DTR ≈ 1.0 |
+| 2 | `no_deep_thinking` | 1 | 8 | 10 | 32 | 64 | 0.01 | Final distribution already matched from the first layer → DTR ≈ 0.0 |
 | 3 | `half_deep_thinking` | 2 | 8 | 10 | 32 | 64 | 0.01 | Token-level selectivity → DTR ≈ 0.5 |
-| 4 | `multilayer_late_divergence` | 3 | 12 | 20 | 64 | 128 | 0.01 | 25% boundary with 12 layers |
-| 5 | `minimal_edge_case` | 4 | 2 | 1 | 16 | 32 | 0.01 | `max(1, floor(...))` floor, single token |
-| 6 | `high_threshold` | 5 | 8 | 15 | 32 | 64 | 100.0 | Threshold above max JSD → DTR = 0.0 |
-| 7 | `realistic_partial` | 6 | 16 | 30 | 128 | 256 | 0.01 | Larger dims, partial divergence → DTR ≈ 0.333 |
+| 4 | `late_exit_boundary` | 3 | 12 | 20 | 64 | 128 | 0.01 | Exit layer in the deep portion for half the tokens |
+| 5 | `minimal_edge_case` | 4 | 2 | 1 | 16 | 32 | 0.01 | Two-layer, single-token boundary |
+| 6 | `high_threshold` | 5 | 8 | 15 | 32 | 64 | 100.0 | Very high threshold causes early exit → DTR = 0.0 |
+| 7 | `realistic_partial` | 6 | 16 | 30 | 128 | 256 | 0.01 | Larger dims, partial deep-token set → DTR ≈ 0.333 |
 
 ### Common failure modes each case is designed to catch
 
-- **Case 1** — basic late-layer logic, handles large magnitude divergence
-- **Case 2** — numerical stability; tiny JSD must not exceed threshold due to floating-point noise
+- **Case 1** — final-layer target logic and late exit classification
+- **Case 2** — early exit when all layers already match the final distribution
 - **Case 3** — per-token selectivity; must not average across tokens before classifying
-- **Case 4** — correct `floor(n_transitions * 0.25)` with 12 layers (11 transitions → n_late=2)
-- **Case 5** — the `max(1, ...)` floor; also tests 1-token sequences
-- **Case 6** — threshold comparison must be strict `>`, not `>=`; impossibly high threshold must yield 0.0 without crashing
-- **Case 7** — correct handling of larger hidden/vocab dims and multi-layer late regime
+- **Case 4** — correct deep-region threshold with 12 layers
+- **Case 5** — minimal layer count and 1-token sequence
+- **Case 6** — high threshold must cause early exit rather than marking tokens deep
+- **Case 7** — correct handling of larger hidden/vocab dims and partial deep-token sets
 
 ---
 
@@ -316,11 +329,12 @@ DTR values by calling `dtr_reference.py` at test time rather than storing floats
 the test file. This means the expected values are always consistent with the reference
 implementation regardless of minor torch version differences.
 
-**Tolerance of 0.01** — JSD is bounded by ln(2) ≈ 0.693. A DTR tolerance of 0.01
-is strict enough to catch most implementation bugs (wrong layer indexing, wrong KL
-direction, missing the floor) while being robust to floating-point rounding across
-platforms.
+**Tolerance of 0.01** — the verifier compares final DTR ratios, not raw JSD
+values. A ratio tolerance of 0.01 is strict enough to catch wrong layer indexing,
+wrong JSD direction, incorrect cumulative-min logic, and wrong deep-region
+boundaries while still allowing minor floating-point differences.
 
-**`dtr_reference.py` is a copy of `solution/dtr.py`** — Harbor mounts `tests/` and
-`solution/` as separate directories. Keeping the reference self-contained in `tests/`
-means the verifier never depends on what the agent wrote in `/solution/`.
+**Self-contained verifier reference** — Harbor mounts `tests/` and `solution/` as
+separate directories. Keeping the reference implementation self-contained in
+`tests/dtr_reference.py` means the verifier never depends on what the agent wrote
+in `/solution/`.

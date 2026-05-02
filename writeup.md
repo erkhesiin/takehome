@@ -4,18 +4,20 @@
 
 The task is based on "Think Deep, Not Just Long: Measuring LLM Reasoning Effort
 via Deep-Thinking Tokens." The paper proposes Deep-Thinking Ratio (DTR), a
-measure that identifies token positions whose late-layer prediction
-distributions keep changing. The evaluated capability is whether a coding agent
-can translate a paper algorithm into a correct, testable PyTorch implementation.
+measure that identifies token positions whose prediction distributions only
+stabilize near the final layers. The evaluated capability is whether a coding
+agent can translate a paper algorithm into a correct, testable PyTorch
+implementation.
 
 ## Agent Task
 
 The agent receives `tasks/deep-thinking-ratio/instruction.md` and the included
 paper PDF. It must create `/solution/dtr.py` with an importable
-`compute_dtr(hidden_states, unembedding_matrix, threshold=0.01) -> float`
-function. The implementation must use only PyTorch and the Python standard
-library, run on CPU, avoid loading real model weights, and return the fraction
-of sequence positions classified as deep-thinking tokens.
+`compute_dtr(hidden_states, unembedding_matrix, threshold=0.01,
+depth_fraction=0.25) -> float` function. The implementation must use only
+PyTorch and the Python standard library, run on CPU, avoid loading real model
+weights, and return the fraction of sequence positions whose exit layer falls
+in the final `depth_fraction` portion of the network.
 
 ## Environment
 
@@ -59,9 +61,9 @@ configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml
 Synthetic hidden states avoid downloading model weights and keep rollouts
 reproducible. Runtime reference computation avoids brittle hardcoded expected
 floats. A seven-case graded reward catches common implementation mistakes such
-as using all layers instead of late layers, averaging across tokens before
-classification, missing the `max(1, floor(...))` late-regime rule, or using a
-non-strict threshold comparison.
+as comparing adjacent layers instead of comparing each layer to the final layer,
+averaging across tokens before classification, missing the cumulative-min exit
+rule, or using the wrong deep-region boundary.
 
 The verifier uses programmatic checks rather than an LLM judge because the
 expected behavior is mathematical and deterministic. This makes the reward

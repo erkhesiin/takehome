@@ -13,17 +13,37 @@ class DTRCase:
     vocab_size: int
     threshold: float
     deep_positions: tuple[int, ...]
-    perturb_transition_offsets: tuple[int, ...] = (0,)
+    matching_final_layer_offsets: tuple[int, ...] = (0,)
 
 
 CASES = [
     DTRCase("all_deep_thinking", 0, 8, 10, 32, 64, 0.01, tuple(range(10))),
     DTRCase("no_deep_thinking", 1, 8, 10, 32, 64, 0.01, ()),
     DTRCase("half_deep_thinking", 2, 8, 10, 32, 64, 0.01, tuple(range(0, 10, 2))),
-    DTRCase("multilayer_late_divergence", 3, 12, 20, 64, 128, 0.01, tuple(range(5, 15)), (0, 1)),
+    DTRCase(
+        "late_exit_boundary",
+        3,
+        12,
+        20,
+        64,
+        128,
+        0.01,
+        tuple(range(5, 15)),
+        (0, 1),
+    ),
     DTRCase("minimal_edge_case", 4, 2, 1, 16, 32, 0.01, (0,)),
     DTRCase("high_threshold", 5, 8, 15, 32, 64, 100.0, tuple(range(15))),
-    DTRCase("realistic_partial", 6, 16, 30, 128, 256, 0.01, tuple(range(10, 20)), (0, 2, 3)),
+    DTRCase(
+        "realistic_partial",
+        6,
+        16,
+        30,
+        128,
+        256,
+        0.01,
+        tuple(range(10, 20)),
+        (0, 2, 3),
+    ),
 ]
 
 
@@ -36,12 +56,8 @@ def make_case(case: DTRCase) -> tuple[list[torch.Tensor], torch.Tensor, float]:
     if case.deep_positions:
         direction = torch.randn(case.hidden_dim)
         direction = direction / direction.norm()
-        n_transitions = case.layers - 1
-        n_late = max(1, int(n_transitions * 0.25))
-        late_start_layer = case.layers - n_late
-
-        for offset in case.perturb_transition_offsets:
-            layer_idx = min(case.layers - 1, late_start_layer + offset)
+        for offset in case.matching_final_layer_offsets:
+            layer_idx = max(0, case.layers - 1 - offset)
             for token_idx in case.deep_positions:
                 hidden_states[layer_idx][token_idx] += direction * 8.0
 

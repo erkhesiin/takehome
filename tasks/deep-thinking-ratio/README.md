@@ -3,7 +3,10 @@
 This Harbor task asks an agent to implement the Deep-Thinking Ratio algorithm
 from the included DTR paper. The agent prompt is in `instruction.md`; the
 expected deliverable is a single importable file at `/solution/dtr.py` defining
-`compute_dtr`.
+`compute_dtr`. The implemented DTR variant compares each layer's logit-lens
+distribution against the final layer distribution, finds each token's earliest
+stabilized exit layer, and returns the fraction of tokens exiting in the final
+portion of the network.
 
 ## Environment
 

@@ -6,55 +6,54 @@ mkdir -p /solution
 cat > /solution/dtr.py <<'PY'
 import math
 
+import torch
+import torch.nn.functional as F
+
 
 def compute_dtr(
-    hidden_states: list,
-    unembedding_matrix,
+    hidden_states: list[torch.Tensor],
+    unembedding_matrix: torch.Tensor,
     threshold: float = 0.01,
+    depth_fraction: float = 0.25,
 ) -> float:
-    if len(hidden_states) < 2:
-        raise ValueError("DTR requires at least two layers")
+    """
+    Computes the Deep-Thinking Ratio (DTR) for an entire sequence simultaneously
+    using vectorized PyTorch operations.
+    """
+    L = len(hidden_states)
+    if L == 0:
+        return 0.0
 
-    unembedding = unembedding_matrix.detach().cpu().tolist()
-    probabilities = []
-    for hidden in hidden_states:
-        token_probabilities = []
-        for token in hidden.detach().cpu().tolist():
-            logits = [
-                sum(value * weight for value, weight in zip(token, vocab_row))
-                for vocab_row in unembedding
-            ]
-            max_logit = max(logits)
-            exp_logits = [math.exp(logit - max_logit) for logit in logits]
-            total = sum(exp_logits)
-            token_probabilities.append([value / total for value in exp_logits])
-        probabilities.append(token_probabilities)
+    seq_len = hidden_states[0].shape[0]
+    if seq_len == 0:
+        return 0.0
 
-    eps = 1e-10
-    jsd_by_transition = []
-    for p, q in zip(probabilities[:-1], probabilities[1:]):
-        token_jsds = []
-        for p_token, q_token in zip(p, q):
-            jsd = 0.0
-            for p_value, q_value in zip(p_token, q_token):
-                midpoint = 0.5 * (p_value + q_value)
-                jsd += 0.5 * p_value * (
-                    math.log(p_value + eps) - math.log(midpoint + eps)
-                )
-                jsd += 0.5 * q_value * (
-                    math.log(q_value + eps) - math.log(midpoint + eps)
-                )
-            token_jsds.append(jsd)
-        jsd_by_transition.append(token_jsds)
+    stacked_hiddens = torch.stack(hidden_states)
+    all_logits = torch.matmul(stacked_hiddens, unembedding_matrix.T)
+    all_probs = F.softmax(all_logits, dim=-1)
 
-    n_late = max(1, math.floor((len(hidden_states) - 1) * 0.25))
-    late_jsds = jsd_by_transition[-n_late:]
-    seq_len = len(late_jsds[0])
-    deep_count = 0
-    for token_idx in range(seq_len):
-        if max(transition[token_idx] for transition in late_jsds) > threshold:
-            deep_count += 1
-    return deep_count / seq_len
+    p_L = all_probs[-1].unsqueeze(0)
+    p_L_expanded = p_L.expand_as(all_probs)
+    m = 0.5 * (p_L + all_probs)
+    log_m = m.clamp(min=1e-10).log()
+
+    kl_pL = F.kl_div(log_m, p_L_expanded, reduction="none").sum(dim=-1)
+    kl_pl = F.kl_div(log_m, all_probs, reduction="none").sum(dim=-1)
+    jsd = 0.5 * (kl_pL + kl_pl)
+
+    cummin_jsd, _ = torch.cummin(jsd, dim=0)
+    met_threshold = cummin_jsd <= threshold
+    layer_indices = torch.arange(1, L + 1, device=jsd.device).unsqueeze(1)
+    valid_indices = torch.where(
+        met_threshold,
+        layer_indices,
+        torch.full_like(layer_indices, L),
+    )
+    c_t, _ = valid_indices.min(dim=0)
+
+    depth_thresh = math.ceil((1.0 - depth_fraction) * L)
+    deep_thinking_token_count = (c_t >= depth_thresh).sum().item()
+    return deep_thinking_token_count / seq_len
 PY
 
 python - <<'PY'

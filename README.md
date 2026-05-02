@@ -1,12 +1,16 @@
 # Deep-Thinking Ratio Harbor Task
 
 This repo contains a Harbor RL evaluation task for implementing the
-Deep-Thinking Ratio (DTR) algorithm from `DTR_Paper.pdf`.
+Deep-Thinking Ratio (DTR) algorithm from `DTR_Paper.pdf`. The task focuses on
+the exit-depth formulation: compare each layer's logit-lens distribution with
+the final layer, find the earliest layer where the token distribution has
+stabilized, and count tokens whose exit layer is in the final portion of the
+network.
 
 The task lives at `tasks/deep-thinking-ratio`. Agents receive
 `instruction.md` and must create `/solution/dtr.py` with an importable
-`compute_dtr` function. The verifier runs seven deterministic cases and writes
-a graded reward in `[0, 1]`.
+`compute_dtr` function. The verifier runs seven deterministic cases and writes a
+graded reward in `[0, 1]`.
 
 ## Layout
 
@@ -212,14 +216,14 @@ Direct OpenAI, if you have an OpenAI key instead:
 
 ```bash
 export OPENAI_API_KEY="sk-..."
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
 ```
 
 PowerShell:
 
 ```powershell
 $env:OPENAI_API_KEY = "sk-..."
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
+harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
 ```
 
 ## Claude Code Credentials
