@@ -1,0 +1,37 @@
+schema_version = "1.1"
+
+[[artifacts]]
+source = "/solution/forward_projection.py"
+destination = "solution/forward_projection.py"
+
+[task]
+name = "takehome/forward-projection"
+description = "Implement and test closed-form feedback-free Forward Projection learning"
+authors = []
+keywords = ["pytorch", "forward-projection", "ridge-regression", "feedback-free-learning", "pytest", "rl-eval"]
+
+[metadata]
+difficulty = "hard"
+category = "machine-learning"
+tags = ["pytorch", "local-learning", "ridge-regression", "deterministic-tests"]
+
+[verifier]
+timeout_sec = 120.0
+
+[agent]
+timeout_sec = 600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 2
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+allow_internet = true
+mcp_servers = []
+
+[verifier.env]
+
+[environment.env]
+
+[solution.env]

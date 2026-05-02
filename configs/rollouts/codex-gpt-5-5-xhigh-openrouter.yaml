@@ -1,16 +1,18 @@
-job_name: dtr-codex-gpt-5-5-xhigh
+job_name: forward-projection-codex-gpt-5-5-xhigh
 jobs_dir: jobs
-n_attempts: 1
-n_concurrent_trials: 1
+n_attempts: 10
+n_concurrent_trials: 2
 
 agents:
   - name: codex
     model_name: gpt-5.5
     kwargs:
       reasoning_effort: xhigh
+      # Newer Codex CLI releases use a Responses WebSocket path that OpenRouter returns 404 for.
+      version: "0.118.0"
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
       OPENAI_BASE_URL: "${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}"
 
 tasks:
-  - path: tasks/deep-thinking-ratio
+  - path: tasks/forward-projection

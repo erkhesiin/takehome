@@ -1,4 +1,4 @@
-job_name: dtr-claude-opus-4-7-high
+job_name: forward-projection-claude-opus-4-7-high
 jobs_dir: jobs
 n_attempts: 10
 n_concurrent_trials: 2
@@ -10,4 +10,4 @@ agents:
       reasoning_effort: high
 
 tasks:
-  - path: tasks/deep-thinking-ratio
+  - path: tasks/forward-projection

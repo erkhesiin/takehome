@@ -1,17 +1,17 @@
 # Rollout Configs
 
-These Harbor job configs implement the reasoning-effort matrix requested in
-`Hillclimb_Take-Home.pdf`.
+These Harbor configs run the required model and reasoning-effort matrix for the Forward Projection task at `tasks/forward-projection`.
 
-| Config | Agent | Model | Reasoning effort | Attempts |
-| --- | --- | --- | --- | --- |
-| `claude-opus-4-7-high.yaml` | Claude Code | `anthropic/claude-opus-4-7` | `high` | 10 |
-| `codex-gpt-5-5-xhigh-openrouter.yaml` | Codex | `gpt-5.5` | `xhigh` | 10 |
+| Config | Agent | Model | Reasoning effort | Attempts | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `claude-opus-4-7-high.yaml` | Claude Code | `anthropic/claude-opus-4-7` | `high` | 10 | Uses the installed Claude Code CLI |
+| `codex-gpt-5-5-xhigh-openrouter.yaml` | Codex | `gpt-5.5` | `xhigh` | 10 | Pins `@openai/codex@0.118.0` |
 
-## OpenRouter Environment
+## Credentials
 
-Claude Code uses OpenRouter's Anthropic-compatible endpoint. Set these in the
-shell that runs Harbor:
+Set OpenRouter credentials in the same shell before running a config. In zsh and bash, keep the variable name, equals sign, and value adjacent, and quote values that may contain punctuation.
+
+Claude Code via OpenRouter:
 
 ```bash
 export OPENROUTER_API_KEY="sk-or-..."
@@ -20,7 +20,7 @@ export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"
 export ANTHROPIC_API_KEY=""
 ```
 
-Codex uses OpenRouter's OpenAI-compatible endpoint:
+Codex via OpenRouter:
 
 ```bash
 export OPENROUTER_API_KEY="sk-or-..."
@@ -28,16 +28,7 @@ export OPENAI_API_KEY="$OPENROUTER_API_KEY"
 export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
-PowerShell:
-
-```powershell
-$env:OPENROUTER_API_KEY = "sk-or-..."
-$env:ANTHROPIC_BASE_URL = "https://openrouter.ai/api"
-$env:ANTHROPIC_AUTH_TOKEN = $env:OPENROUTER_API_KEY
-$env:ANTHROPIC_API_KEY = ""
-$env:OPENAI_API_KEY = $env:OPENROUTER_API_KEY
-$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
-```
+The Codex config pins `@openai/codex@0.118.0`. Newer Codex CLI releases can attempt an OpenRouter `/responses` WebSocket path that returns `404` before the agent writes `/solution/forward_projection.py`.
 
 ## Run
 
@@ -48,6 +39,11 @@ harbor run -c configs/rollouts/claude-opus-4-7-high.yaml --yes
 harbor run -c configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml --yes
 ```
 
-Results are written under `jobs/`. Each job produces 10 attempts, including
-agent logs, verifier logs, rewards, and trajectories when the adapter emits
-them.
+For slower but easier-to-debug runs:
+
+```bash
+harbor run -c configs/rollouts/claude-opus-4-7-high.yaml --n-concurrent 1 --yes
+harbor run -c configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml --n-concurrent 1 --yes
+```
+
+Generated jobs are written under `jobs/`. Check each trial's `verifier/reward.txt`, `verifier/test-stdout.txt`, `result.json`, and `artifacts/solution/forward_projection.py`.

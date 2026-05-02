@@ -1,176 +1,168 @@
-# Deep-Thinking Ratio Harbor Task
+# Forward Projection Harbor Task
 
-This repo contains a Harbor RL evaluation task for implementing the
-Deep-Thinking Ratio (DTR) algorithm from `DTR_Paper.pdf`. The task focuses on
-the exit-depth formulation: compare each layer's logit-lens distribution with
-the final layer, find the earliest layer where the token distribution has
-stabilized, and count tokens whose exit layer is in the final portion of the
-network.
+This repository contains a Harbor task based on `Forward_Projection_Paper.pdf`, the paper "Closed-form feedback-free learning with forward projection." The agent must create `/solution/forward_projection.py` and implement the core Forward Projection fitting routine in PyTorch.
 
-The task lives at `tasks/deep-thinking-ratio`. Agents receive
-`instruction.md` and must create `/solution/dtr.py` with an importable
-`compute_dtr` function. The verifier runs seven deterministic cases and writes a
-graded reward in `[0, 1]`.
+The task focuses on whether an agent can translate a recent ML paper into numerically stable, deterministic code. It asks for layerwise target membrane construction, closed-form ridge fitting, and replay of the fitted stack on new inputs.
 
 ## Layout
 
 ```text
 .
-├── README.md
-├── SPEC.md
-├── writeup.md
-├── DTR_Paper.pdf
-├── configs/
-│   └── rollouts/
-│       ├── README.md
-│       ├── claude-opus-4-7-high.yaml
-│       └── codex-gpt-5-5-xhigh-openrouter.yaml
-└── tasks/
-    └── deep-thinking-ratio/
-        ├── instruction.md
-        ├── task.toml
-        ├── environment/
-        │   ├── Dockerfile
-        │   └── DTR_Paper.pdf
-        ├── solution/
-        │   ├── dtr.py
-        │   └── solve.sh
-        └── tests/
-            ├── test.sh
-            ├── run_verifier.py
-            ├── test_dtr.py
-            ├── test_cases.py
-            └── dtr_reference.py
+|-- README.md
+|-- SPEC.md
+|-- writeup.md
+|-- Forward_Projection_Paper.pdf
+|-- configs/
+|   `-- rollouts/
+|       |-- README.md
+|       |-- claude-opus-4-7-high.yaml
+|       `-- codex-gpt-5-5-xhigh-openrouter.yaml
+`-- tasks/
+    `-- forward-projection/
+        |-- instruction.md
+        |-- task.toml
+        |-- environment/
+        |   |-- Dockerfile
+        |   `-- Forward_Projection_Paper.pdf
+        |-- solution/
+        |   |-- forward_projection.py
+        |   `-- solve.sh
+        `-- tests/
+            |-- test.sh
+            |-- run_verifier.py
+            |-- test_forward_projection.py
+            |-- test_cases.py
+            `-- fp_reference.py
+```
+
+## Task Summary
+
+The submitted file must define two top-level functions:
+
+```python
+def fit_forward_projection(
+    X,
+    Y,
+    Qs,
+    Us,
+    ridge=1e-3,
+    activation="tanh",
+    target_nonlinearity="tanh",
+):
+    ...
+
+
+def forward_projection_predict(X, weights, activation="tanh"):
+    ...
+```
+
+`fit_forward_projection` sequentially generates target membrane potentials using fixed random projections and fits each layer by closed-form ridge regression. `forward_projection_predict` replays the learned weights on new input and returns both membrane potentials and activations.
+
+The verifier gives partial credit:
+
+```text
+reward = passed_cases / 12
 ```
 
 ## Prerequisites
 
-Install Harbor and make sure Docker is running:
+Install Harbor, make sure Docker is running, and install the agent CLIs you plan to evaluate:
 
 ```bash
 pip install harbor
 harbor --version
 docker info
-```
-
-For real-agent rollouts, install the agent CLI you want to use, for example:
-
-```bash
-npm install -g @openai/codex
 npm install -g @anthropic-ai/claude-code
+npm install -g @openai/codex
 ```
 
 ## Run The Oracle
 
-From the repo root, run the reference solution:
+Run the checked-in reference solution from the repo root:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent oracle --force-build
+harbor run -p tasks/forward-projection --agent oracle --force-build
 ```
 
 Expected reward: `1.0`.
 
-Use `--force-build` after changing `environment/Dockerfile`; omit it once the
-image is current:
+Use `--force-build` after changing files in `tasks/forward-projection/environment`. For normal reruns, this is enough:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent oracle
+harbor run -p tasks/forward-projection --agent oracle
 ```
 
-## Run A Real Agent
+## Run The Verifier Locally
 
-The take-home PDF asks for these model/reasoning tiers:
-
-| Agent | Model | Reasoning effort | Attempts |
-| --- | --- | --- | --- |
-| Claude Code | `anthropic/claude-opus-4-7` | `high` | 10 |
-| Codex | `gpt-5.5` | `xhigh` | 10 |
-
-Codex with an OpenRouter key:
+This command runs the pytest verifier against the checked-in solution without starting a Harbor job:
 
 ```bash
-export OPENROUTER_API_KEY="sk-or-..."
-export OPENAI_API_KEY="$OPENROUTER_API_KEY"
-export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
+PYTHONDONTWRITEBYTECODE=1 uv run --python 3.11 --with torch==2.3.1 --with pytest==8.4.1 python -m pytest -q -p no:cacheprovider tasks/forward-projection/tests/test_forward_projection.py
 ```
 
-PowerShell:
+Expected local result: all 12 tests pass.
 
-```powershell
-$env:OPENROUTER_API_KEY = "sk-or-..."
-$env:OPENAI_API_KEY = $env:OPENROUTER_API_KEY
-$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY --agent-env OPENAI_BASE_URL=$env:OPENAI_BASE_URL
-```
+## Run Model Rollouts
 
-Claude Code with OpenRouter:
+The required rollout configs live under `configs/rollouts`.
+
+| Config | Agent | Model | Reasoning effort | Attempts |
+| --- | --- | --- | --- | --- |
+| `claude-opus-4-7-high.yaml` | Claude Code | `anthropic/claude-opus-4-7` | `high` | 10 |
+| `codex-gpt-5-5-xhigh-openrouter.yaml` | Codex | `gpt-5.5` | `xhigh` | 10 |
+
+Set OpenRouter credentials before running the matrix.
+
+Claude Code:
 
 ```bash
 export OPENROUTER_API_KEY="sk-or-..."
 export ANTHROPIC_BASE_URL="https://openrouter.ai/api"
 export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"
 export ANTHROPIC_API_KEY=""
-harbor run -p tasks/deep-thinking-ratio --agent claude-code --model anthropic/claude-opus-4-7 --agent-kwarg reasoning_effort=high
 ```
 
-Run repeated attempts with `--n-attempts`. `--n-concurrent` controls how many
-trials run at once.
+Codex:
 
 ```bash
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL" --n-attempts 10 --n-concurrent 2
+export OPENROUTER_API_KEY="sk-or-..."
+export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
-## Run Required Rollout Matrix
-
-The same settings are checked into reproducible Harbor job configs:
+Run the jobs:
 
 ```bash
 harbor run -c configs/rollouts/claude-opus-4-7-high.yaml --yes
 harbor run -c configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml --yes
 ```
 
-PowerShell uses the same Harbor commands after setting the environment variables
-shown above. Codex credentials are read from the config file's
-`${OPENAI_API_KEY}` and `${OPENAI_BASE_URL}` templates. Claude Code reads
-Anthropic/OpenRouter credentials from the Harbor process environment, so export
-the `ANTHROPIC_*` variables first or pass them with `--env-file`.
-
-To override concurrency without editing the files:
+Use lower concurrency if provider limits or local resources are tight:
 
 ```bash
 harbor run -c configs/rollouts/codex-gpt-5-5-xhigh-openrouter.yaml --n-concurrent 1 --yes
 ```
 
-## Run All Local Tasks
-
-This repo currently has one task, but `tasks/` can be run as a local task
-collection:
-
-```bash
-harbor run -p tasks --agent oracle --force-build
-```
+The Codex config pins `@openai/codex@0.118.0` for OpenRouter compatibility. Newer CLI releases can fail against OpenRouter before writing `/solution/forward_projection.py`.
 
 ## Inspect Results
 
-Harbor writes job outputs under `jobs/` by default. Useful files are:
+Harbor writes job output under `jobs/`. Useful files inside each trial are:
 
 ```text
 jobs/<job-name>/<trial-id>/result.json
+jobs/<job-name>/<trial-id>/trial.log
 jobs/<job-name>/<trial-id>/verifier/reward.txt
 jobs/<job-name>/<trial-id>/verifier/test-stdout.txt
-jobs/<job-name>/<trial-id>/artifacts/solution/dtr.py
+jobs/<job-name>/<trial-id>/artifacts/solution/forward_projection.py
 jobs/<job-name>/<trial-id>/artifacts/manifest.json
 jobs/<job-name>/<trial-id>/agent/<agent-name>.txt
 jobs/<job-name>/<trial-id>/agent/trajectory.json
 ```
 
-`verifier/test-stdout.txt` mirrors the pytest/verifier output and is the first
-place to look for a failing reward. `artifacts/solution/dtr.py` is the file the
-agent wrote, when it exists; if it does not, `artifacts/manifest.json` records
-the failed collection.
+`verifier/test-stdout.txt` explains pytest failures. The submitted implementation is copied to `artifacts/solution/forward_projection.py` when the agent writes the expected file.
 
-You can also start Harbor's viewer:
+You can also open Harbor's viewer:
 
 ```bash
 harbor view jobs
@@ -178,118 +170,19 @@ harbor view jobs
 
 ## Check Task Quality
 
-`harbor check` uses an LLM judge, so it needs `ANTHROPIC_API_KEY`.
-
-macOS/Linux:
+`harbor check` uses an LLM judge and requires an Anthropic API key:
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
-PYTHONIOENCODING=utf-8 harbor check tasks/deep-thinking-ratio
-```
-
-PowerShell:
-
-```powershell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
-$env:PYTHONIOENCODING = "utf-8"
-harbor check tasks/deep-thinking-ratio
-```
-
-## Codex Credentials
-
-Harbor runs Codex inside the task container with `CODEX_HOME=/logs/agent`, so
-your local `~/.codex/config.toml` is not automatically used. Pass credentials
-with `--agent-env`.
-
-OpenRouter:
-
-```bash
-export OPENROUTER_API_KEY="sk-or-..."
-export OPENAI_API_KEY="$OPENROUTER_API_KEY"
-export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY" --agent-env OPENAI_BASE_URL="$OPENAI_BASE_URL"
-```
-
-PowerShell:
-
-```powershell
-$env:OPENROUTER_API_KEY = "sk-or-..."
-$env:OPENAI_API_KEY = $env:OPENROUTER_API_KEY
-$env:OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY --agent-env OPENAI_BASE_URL=$env:OPENAI_BASE_URL
-```
-
-Direct OpenAI, if you have an OpenAI key instead:
-
-```bash
-export OPENAI_API_KEY="sk-..."
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY="$OPENAI_API_KEY"
-```
-
-PowerShell:
-
-```powershell
-$env:OPENAI_API_KEY = "sk-..."
-harbor run -p tasks/deep-thinking-ratio --agent codex --model gpt-5.5 --agent-kwarg reasoning_effort=xhigh --agent-env OPENAI_API_KEY=$env:OPENAI_API_KEY
-```
-
-## Claude Code Credentials
-
-Claude Code with OpenRouter uses OpenRouter's Anthropic skin without `/v1`:
-
-```bash
-export OPENROUTER_API_KEY="sk-or-..."
-export ANTHROPIC_BASE_URL="https://openrouter.ai/api"
-export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"
-export ANTHROPIC_API_KEY=""
-```
-
-PowerShell:
-
-```powershell
-$env:OPENROUTER_API_KEY = "sk-or-..."
-$env:ANTHROPIC_BASE_URL = "https://openrouter.ai/api"
-$env:ANTHROPIC_AUTH_TOKEN = $env:OPENROUTER_API_KEY
-$env:ANTHROPIC_API_KEY = ""
+PYTHONIOENCODING=utf-8 harbor check tasks/forward-projection
 ```
 
 ## Troubleshooting
 
 If Docker reuses an old image after task changes, rerun with `--force-build`.
 
-If a real agent exits with `NonZeroAgentExitCodeError`, inspect its command
-logs under `jobs/<job-name>/<trial-id>/agent/`. This usually means the agent
-CLI failed before verification, for example from missing API credentials,
-model/provider configuration, lack of network access, or a command/runtime
-error. The task leaves internet enabled because installed agents such as Codex
-need it for setup and model API calls.
+If a rollout exits before verification, inspect `jobs/<job-name>/<trial-id>/agent/` and `trial.log` for CLI, credential, provider, network, or timeout errors.
 
-If the reward is `0.0`, inspect:
+If the reward is `0.0`, inspect `verifier/test-stdout.txt` first. Common causes are a missing `/solution/forward_projection.py`, missing top-level functions, returning only weights, using gradient descent instead of the closed-form ridge fit, mixing up the activation and target nonlinearity, or failing to include the original input as `activations[0]`.
 
-```text
-jobs/<job-name>/<trial-id>/verifier/test-stdout.txt
-jobs/<job-name>/<trial-id>/artifacts/solution/dtr.py
-jobs/<job-name>/<trial-id>/artifacts/manifest.json
-jobs/<job-name>/<trial-id>/agent/<agent-name>.txt
-jobs/<job-name>/<trial-id>/agent/trajectory.json
-```
-
-If one agent gets `0.0` on every rollout while another agent consistently gets
-`1.0`, inspect one failing `test-stdout.txt` first. The most common
-all-or-nothing failures are: no file at `/solution/dtr.py`, `compute_dtr`
-missing at module top level, returning a `torch.Tensor` instead of a Python
-`float`, or implementing adjacent-layer JSD instead of comparing every layer to
-the final layer.
-
-If `artifacts/solution/dtr.py` is present but zero bytes, the agent only created
-a placeholder. The Codex trace may show a command such as `touch
-/solution/dtr.py` followed by no implementation write.
-
-If `test-stdout.txt` is empty, inspect the agent log. A trace that repeatedly
-says it will create `/solution/dtr.py` but has no file-writing command means the
-agent never submitted a solution. With Codex through OpenRouter, also check for
-`wss://openrouter.ai/api/v1/responses` 404 websocket errors in `agent/codex.txt`;
-that indicates a provider/CLI compatibility issue rather than a verifier bug.
-
-If Torch reports `Illegal instruction`, make sure you rebuilt the image after
-the conservative CPU-dispatch environment variables were added.
+A direct LAPACK-backed `torch.linalg.solve` may crash with `Illegal instruction` in some Docker CPU environments. The oracle and reference use a small closed-form PyTorch linear-system solve to avoid that host-specific failure mode.

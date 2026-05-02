@@ -1,0 +1,407 @@
+FFFFFFFF....                                                             [100%]
+=================================== FAILURES ===================================
+________ test_fit_forward_projection_matches_reference[two_layer_tanh] _________
+
+case = FitCase(name='two_layer_tanh', seed=0, samples=12, input_dim=5, label_dim=3, layer_dims=(7, 4), ridge=0.01, activation...nlinearity='tanh', dtype=torch.float32, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=False, soft_labels=False)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[  1.3942,   3.4604, -21.9337, -17.0757,  -1.1082,  15.6934, -18.4716],
+        [ -3.7634,  -9.3302,   6.7442...,
+        [    5.9598,    -3.8395,     6.5868,   -14.2962],
+        [  -25.6499,   -50.1355,    68.1686,    12.9110]])]
+expected = [tensor([[-0.2664, -0.1516, -0.4067, -0.0899,  0.1439,  0.2624, -0.0694],
+        [-0.0086, -0.2442,  0.1047,  0.2485,....2892,  0.1731, -0.4933],
+        [ 0.1974, -1.2150,  0.7810, -0.7180],
+        [ 1.4583, -1.1065,  0.6341, -0.7211]])]
+rtol = 0.0001, atol = 1e-05, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 35 / 35 (100.0%)
+E           Greatest absolute difference: 39.20945739746094 at index (4, 4) (up to 1e-05 allowed)
+E           Greatest relative difference: 435.9001770019531 at index (1, 0) (up to 0.0001 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+__ test_fit_forward_projection_matches_reference[identity_targets_relu_model] __
+
+case = FitCase(name='identity_targets_relu_model', seed=1, samples=9, input_dim=4, label_dim=2, layer_dims=(6, 5, 3), ridge=0...nearity='identity', dtype=torch.float32, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=False, soft_labels=True)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[  -3.9672,    2.4033,   -3.9041,   -3.8074,    5.8141,    8.6658],
+        [-204.1378,   26.4356, -136.5596,...[[nan, nan, nan],
+        [nan, nan, nan],
+        [nan, nan, nan],
+        [nan, nan, nan],
+        [nan, nan, nan]])]
+expected = [tensor([[ 0.9016, -0.0837,  0.6009,  0.5128, -0.8722, -0.6387],
+        [ 0.3544,  0.0329,  0.2697,  0.0995, -0.0087,...7146],
+        [-0.3082,  0.4113,  0.3686],
+        [ 0.1810,  1.5420, -0.4832],
+        [ 0.6322,  1.0418, -0.2895]])]
+rtol = 0.0001, atol = 1e-05, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 24 / 24 (100.0%)
+E           Greatest absolute difference: 249.82669067382812 at index (3, 4) (up to 1e-05 allowed)
+E           Greatest relative difference: 24853.048828125 at index (1, 4) (up to 0.0001 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+____ test_fit_forward_projection_matches_reference[rank_deficient_sigmoid] _____
+
+case = FitCase(name='rank_deficient_sigmoid', seed=2, samples=8, input_dim=6, label_dim=3, layer_dims=(5, 5), ridge=0.1, acti...onlinearity='tanh', dtype=torch.float32, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=True, soft_labels=False)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[  11.1868,    2.7402,   30.4682,  -10.2416,   -0.6468],
+        [ -11.4775,    0.8468,  -30.1044,   14.7177,...      [ -2.6641,   8.6999, -17.7071, -14.3230,  24.4989],
+        [  4.1184, -12.0784,  25.8983,  21.6751, -35.5774]])]
+expected = [tensor([[-0.5319,  0.1447, -0.3162,  0.0196, -0.4130],
+        [ 0.2959, -0.0863,  0.2280,  0.4501, -0.0962],
+       ....2105],
+        [-0.1923, -0.2116, -0.4334, -0.3211, -1.1893],
+        [-0.2152,  0.6384, -0.5512, -0.3090,  1.3430]])]
+rtol = 0.0001, atol = 1e-05, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 30 / 30 (100.0%)
+E           Greatest absolute difference: 104.18901062011719 at index (2, 2) (up to 1e-05 allowed)
+E           Greatest relative difference: 523.1430053710938 at index (0, 3) (up to 0.0001 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+______ test_fit_forward_projection_matches_reference[high_dim_low_sample] ______
+
+case = FitCase(name='high_dim_low_sample', seed=3, samples=5, input_dim=9, label_dim=4, layer_dims=(11, 6), ridge=0.2, activa...onlinearity='relu', dtype=torch.float32, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=False, soft_labels=True)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[-4.1955e+01, -1.1986e+02, -1.0385e+02, -2.2082e+01, -5.1484e+00,
+         -4.2638e+01, -1.2978e+02,  2.4903e...       -4.5079e-01],
+        [ 1.1140e+00,  4.8188e+00,  1.2094e+01,  4.5362e+00, -7.1890e-01,
+          7.7198e+00]])]
+expected = [tensor([[-0.3105, -0.3347, -0.3945, -0.2007, -0.2032,  0.0933, -0.0791,  0.0246,
+         -0.1461, -0.0767, -0.1198],...0.0000,  0.0362, -0.1616,  0.4472,  0.0605, -0.2318],
+        [ 0.0000,  0.0045,  0.2614, -0.2140,  0.1735,  0.3994]])]
+rtol = 0.0001, atol = 1e-05, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 99 / 99 (100.0%)
+E           Greatest absolute difference: 402.71905517578125 at index (3, 6) (up to 1e-05 allowed)
+E           Greatest relative difference: 8560.7373046875 at index (3, 10) (up to 0.0001 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+__ test_fit_forward_projection_matches_reference[large_magnitude_saturation] ___
+
+case = FitCase(name='large_magnitude_saturation', seed=4, samples=10, input_dim=4, label_dim=3, layer_dims=(8, 4), ridge=0.1,...earity='sigmoid', dtype=torch.float32, x_scale=25.0, q_scale=0.1, u_scale=2.0, rank_deficient=False, soft_labels=False)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[-2.6642e+11,  3.9170e+11, -1.1359e+11, -3.0900e+10, -1.4060e+11,
+         -2.5998e+11, -6.4326e+10,  3.4959e....0880,   7.2835],
+        [  8.4390,   9.6250,  18.1750,   8.7737],
+        [ -9.6526, -11.0092, -20.7888, -10.0355]])]
+expected = [tensor([[-0.0040,  0.0255,  0.0020,  0.0095,  0.0097, -0.0059,  0.0019,  0.0385],
+        [ 0.0174,  0.0091,  0.0137,....0450,  0.2231,  0.0807],
+        [ 0.1652,  0.6375,  0.1927,  0.2032],
+        [ 1.9626,  1.8223,  2.2498,  1.3775]])]
+rtol = 0.0001, atol = 1e-05, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 32 / 32 (100.0%)
+E           Greatest absolute difference: 1767789821952.0 at index (3, 1) (up to 1e-05 allowed)
+E           Greatest relative difference: 8470696099315712.0 at index (3, 1) (up to 0.0001 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+_______ test_fit_forward_projection_matches_reference[float64_precision] _______
+
+case = FitCase(name='float64_precision', seed=5, samples=11, input_dim=5, label_dim=4, layer_dims=(6, 7, 3), ridge=0.001, act...onlinearity='tanh', dtype=torch.float64, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=False, soft_labels=True)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[ -3.0869,  -1.9002,   7.5291,   2.3178,  -4.1976,  -5.4937],
+        [ -3.5562,  11.7728,  -8.3525,   0.4024...       [-7.0405e+51, -7.0051e+51, -5.6611e+51],
+        [-1.7561e+51, -1.7473e+51, -1.4120e+51]], dtype=torch.float64)]
+expected = [tensor([[-0.2696, -0.3293,  0.5703,  0.1827, -0.4308, -0.2112],
+        [-0.5842,  0.4866,  0.1733,  0.3240,  0.4165,...44, -0.0540, -1.1841],
+        [-0.0623,  0.1714, -0.5765],
+        [-0.3085, -0.9088, -1.5942]], dtype=torch.float64)]
+rtol = 1e-08, atol = 1e-10, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 30 / 30 (100.0%)
+E           Greatest absolute difference: 24.600265255493685 at index (2, 1) (up to 1e-10 allowed)
+E           Greatest relative difference: 184.86622598550434 at index (4, 4) (up to 1e-08 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+_____ test_fit_forward_projection_matches_reference[single_layer_boundary] _____
+
+case = FitCase(name='single_layer_boundary', seed=6, samples=7, input_dim=3, label_dim=2, layer_dims=(2,), ridge=0.0001, acti...earity='identity', dtype=torch.float32, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=False, soft_labels=False)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[ 3.1489, -3.9490],
+        [ 8.1256, -1.1819],
+        [-1.5434,  5.4959]])]
+expected = [tensor([[ 0.4481, -0.5779],
+        [ 0.8705,  0.1726],
+        [-0.3157,  0.7253]])]
+rtol = 0.0001, atol = 1e-05, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 6 / 6 (100.0%)
+E           Greatest absolute difference: 7.2551164627075195 at index (1, 0) (up to 1e-05 allowed)
+E           Greatest relative difference: 8.334856986999512 at index (1, 0) (up to 0.0001 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+__ test_fit_forward_projection_matches_reference[wide_rank_deficient_float64] __
+
+case = FitCase(name='wide_rank_deficient_float64', seed=7, samples=6, input_dim=8, label_dim=3, layer_dims=(10, 4), ridge=0.0...inearity='sigmoid', dtype=torch.float64, x_scale=1.0, q_scale=0.5, u_scale=0.5, rank_deficient=True, soft_labels=False)
+
+    @pytest.mark.parametrize("case", FIT_CASES, ids=[case.name for case in FIT_CASES])
+    def test_fit_forward_projection_matches_reference(case):
+        module = load_agent_module()
+        kwargs = make_fit_inputs(case)
+        originals = {key: _clone_nested(value) for key, value in kwargs.items() if key in {"X", "Y", "Qs", "Us"}}
+    
+        actual = module.fit_forward_projection(**kwargs)
+        expected = fit_reference(**kwargs)
+    
+        assert isinstance(actual, dict), "fit_forward_projection must return a dict"
+        assert set(actual.keys()) == {"weights", "membranes", "activations"}
+    
+        rtol, atol = (1e-8, 1e-10) if case.dtype is torch.float64 else (1e-4, 1e-5)
+>       _assert_tensor_lists_close(actual["weights"], expected["weights"], rtol, atol, "weights")
+
+/tests/test_forward_projection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = [tensor([[-1408.1104, -1376.4396, -1366.5089, -1628.4282, -1311.9231, -1644.8062,
+         -1451.3872, -1512.0275, -10... -6.5518e+07, -7.1346e+07],
+        [-2.7254e+07, -8.2442e+07, -7.3070e+07, -7.9571e+07]],
+       dtype=torch.float64)]
+expected = [tensor([[-0.4035, -0.4900, -0.5318, -0.6033, -0.3278, -0.7303, -0.5163, -0.6512,
+         -0.5119, -0.6786],
+        ...25],
+        [ 0.3194,  0.4952,  0.4152,  0.3889],
+        [ 0.2210,  0.1990,  0.2379,  0.2083]], dtype=torch.float64)]
+rtol = 1e-08, atol = 1e-10, label = 'weights'
+
+    def _assert_tensor_lists_close(actual, expected, rtol, atol, label):
+        assert isinstance(actual, list), f"{label} must be a list"
+        assert len(actual) == len(expected), f"{label} has the wrong length"
+        for idx, (actual_tensor, expected_tensor) in enumerate(zip(actual, expected)):
+            assert isinstance(actual_tensor, torch.Tensor), f"{label}[{idx}] must be a tensor"
+            assert actual_tensor.shape == expected_tensor.shape
+            assert actual_tensor.dtype == expected_tensor.dtype
+            assert torch.isfinite(actual_tensor).all()
+>           torch.testing.assert_close(actual_tensor, expected_tensor, rtol=rtol, atol=atol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 80 / 80 (100.0%)
+E           Greatest absolute difference: 1644.0758656465043 at index (0, 5) (up to 1e-10 allowed)
+E           Greatest relative difference: 62445.89051318768 at index (5, 4) (up to 1e-08 allowed)
+
+/tests/test_forward_projection.py:54: AssertionError
+=============================== warnings summary ===============================
+test_forward_projection.py::test_fit_forward_projection_matches_reference[two_layer_tanh]
+  /tests/test_cases.py:70: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:84.)
+    X = case.x_scale * torch.randn(case.samples, case.input_dim, generator=generator, dtype=case.dtype)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED ../tests/test_forward_projection.py::test_forward_projection_predict_matches_reference[predict_basic]
+PASSED ../tests/test_forward_projection.py::test_forward_projection_predict_matches_reference[predict_relu_three_layer]
+PASSED ../tests/test_forward_projection.py::test_forward_projection_predict_matches_reference[predict_identity_float64]
+PASSED ../tests/test_forward_projection.py::test_forward_projection_predict_matches_reference[predict_sigmoid_large_inputs]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[two_layer_tanh]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[identity_targets_relu_model]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[rank_deficient_sigmoid]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[high_dim_low_sample]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[large_magnitude_saturation]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[float64_precision]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[single_layer_boundary]
+FAILED ../tests/test_forward_projection.py::test_fit_forward_projection_matches_reference[wide_rank_deficient_float64]
+8 failed, 4 passed, 1 warning in 0.50s

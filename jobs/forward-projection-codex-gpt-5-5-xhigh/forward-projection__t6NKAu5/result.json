@@ -1,0 +1,109 @@
+{
+    "id": "b61486a9-b160-4902-9f8f-fe56e2f468d6",
+    "task_name": "takehome/forward-projection",
+    "trial_name": "forward-projection__t6NKAu5",
+    "trial_uri": "file:///Users/erkhes/Developer/takehome/jobs/forward-projection-codex-gpt-5-5-xhigh/forward-projection__t6NKAu5",
+    "task_id": {
+        "path": "tasks/forward-projection"
+    },
+    "source": null,
+    "task_checksum": "00fa6a5f4827296e1cc1f4f0b60cd612694bf76c21fdf76ad765f14b6ddd5a7b",
+    "config": {
+        "task": {
+            "path": "tasks/forward-projection",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "forward-projection__t6NKAu5",
+        "trials_dir": "jobs/forward-projection-codex-gpt-5-5-xhigh",
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "codex",
+            "import_path": null,
+            "model_name": "gpt-5.5",
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "kwargs": {
+                "reasoning_effort": "xhigh",
+                "version": "0.118.0"
+            },
+            "env": {
+                "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+                "OPENAI_BASE_URL": "${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}"
+            }
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "suppress_override_warnings": false,
+            "mounts_json": null,
+            "env": {},
+            "kwargs": {}
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "env": {},
+            "disable": false
+        },
+        "artifacts": [],
+        "job_id": "dc893e23-b9f4-4213-af7d-fdd29dfc403a"
+    },
+    "agent_info": {
+        "name": "codex",
+        "version": "0.118.0",
+        "model_info": {
+            "name": "gpt-5.5",
+            "provider": null
+        }
+    },
+    "agent_result": {
+        "n_input_tokens": 596276,
+        "n_cache_tokens": 504576,
+        "n_output_tokens": 16565,
+        "cost_usd": 1.207738,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 1.0
+        }
+    },
+    "exception_info": null,
+    "started_at": "2026-05-02T23:03:52.456614Z",
+    "finished_at": "2026-05-02T23:09:11.416769Z",
+    "environment_setup": {
+        "started_at": "2026-05-02T23:03:52.462298Z",
+        "finished_at": "2026-05-02T23:03:54.840812Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-05-02T23:03:54.840846Z",
+        "finished_at": "2026-05-02T23:04:04.215184Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-05-02T23:04:04.215271Z",
+        "finished_at": "2026-05-02T23:08:59.160733Z"
+    },
+    "verifier": {
+        "started_at": "2026-05-02T23:08:59.275698Z",
+        "finished_at": "2026-05-02T23:09:00.610679Z"
+    },
+    "step_results": null
+}

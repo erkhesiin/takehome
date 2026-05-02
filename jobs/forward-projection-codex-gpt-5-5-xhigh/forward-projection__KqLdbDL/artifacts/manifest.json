@@ -1,0 +1,8 @@
+[
+  {
+    "source": "/solution/forward_projection.py",
+    "destination": "artifacts/solution/forward_projection.py",
+    "type": "file",
+    "status": "ok"
+  }
+]
