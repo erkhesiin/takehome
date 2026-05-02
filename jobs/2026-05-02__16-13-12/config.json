@@ -1,5 +1,5 @@
 {
-    "job_name": "dtr-codex-gpt-5-5-xhigh",
+    "job_name": "2026-05-02__16-13-12",
     "jobs_dir": "jobs",
     "n_attempts": 1,
     "timeout_multiplier": 1.0,
@@ -8,17 +8,17 @@
     "agent_setup_timeout_multiplier": null,
     "environment_build_timeout_multiplier": null,
     "debug": false,
-    "n_concurrent_trials": 1,
+    "n_concurrent_trials": 4,
     "quiet": false,
     "retry": {
         "max_retries": 0,
         "include_exceptions": null,
         "exclude_exceptions": [
-            "AgentTimeoutError",
             "VerifierTimeoutError",
-            "RewardFileEmptyError",
+            "RewardFileNotFoundError",
             "VerifierOutputParseError",
-            "RewardFileNotFoundError"
+            "RewardFileEmptyError",
+            "AgentTimeoutError"
         ],
         "wait_multiplier": 1.0,
         "min_wait_sec": 1.0,
@@ -58,7 +58,7 @@
             },
             "env": {
                 "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-                "OPENAI_BASE_URL": "${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}"
+                "OPENAI_BASE_URL": "https://openrouter.ai/api/v1"
             }
         }
     ],

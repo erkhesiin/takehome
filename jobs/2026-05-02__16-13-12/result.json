@@ -1,7 +1,7 @@
 {
-    "id": "8fb068bd-14ad-4469-a5f7-9da4cf5e6b82",
-    "started_at": "2026-05-02T16:15:14.473361",
-    "finished_at": "2026-05-02T16:16:08.440496",
+    "id": "4def95fa-599f-4f77-b9e7-2541ff75d778",
+    "started_at": "2026-05-02T16:13:12.632393",
+    "finished_at": "2026-05-02T16:14:15.087234",
     "n_total_trials": 1,
     "stats": {
         "n_trials": 1,
@@ -19,16 +19,16 @@
                 "reward_stats": {
                     "reward": {
                         "0.0": [
-                            "deep-thinking-ratio__hqrFPDh"
+                            "deep-thinking-ratio__3pUnWS9"
                         ]
                     }
                 },
                 "exception_stats": {}
             }
         },
-        "n_input_tokens": 29580,
+        "n_input_tokens": 29579,
         "n_cache_tokens": 0,
-        "n_output_tokens": 1161,
-        "cost_usd": 0.18273
+        "n_output_tokens": 1299,
+        "cost_usd": 0.186865
     }
 }

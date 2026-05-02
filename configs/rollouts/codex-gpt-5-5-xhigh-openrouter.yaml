@@ -1,7 +1,7 @@
 job_name: dtr-codex-gpt-5-5-xhigh
 jobs_dir: jobs
-n_attempts: 10
-n_concurrent_trials: 2
+n_attempts: 1
+n_concurrent_trials: 1
 
 agents:
   - name: codex

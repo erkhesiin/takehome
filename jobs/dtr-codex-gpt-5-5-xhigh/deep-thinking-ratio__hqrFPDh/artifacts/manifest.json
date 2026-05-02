@@ -1,0 +1,8 @@
+[
+  {
+    "source": "/solution/dtr.py",
+    "destination": "artifacts/solution/dtr.py",
+    "type": "file",
+    "status": "ok"
+  }
+]

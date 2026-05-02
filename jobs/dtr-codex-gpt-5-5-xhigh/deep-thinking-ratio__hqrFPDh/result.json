@@ -1,0 +1,108 @@
+{
+    "id": "fc19f373-8784-445e-80b9-82e25ff8d9cb",
+    "task_name": "takehome/deep-thinking-ratio",
+    "trial_name": "deep-thinking-ratio__hqrFPDh",
+    "trial_uri": "file:///Users/erkhes/Developer/takehome/jobs/dtr-codex-gpt-5-5-xhigh/deep-thinking-ratio__hqrFPDh",
+    "task_id": {
+        "path": "tasks/deep-thinking-ratio"
+    },
+    "source": null,
+    "task_checksum": "544f46bce90fac5ef8da139a55356dda1356d7d82910d26b27c4488052f2d4a4",
+    "config": {
+        "task": {
+            "path": "tasks/deep-thinking-ratio",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "deep-thinking-ratio__hqrFPDh",
+        "trials_dir": "jobs/dtr-codex-gpt-5-5-xhigh",
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "codex",
+            "import_path": null,
+            "model_name": "gpt-5.5",
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "kwargs": {
+                "reasoning_effort": "xhigh"
+            },
+            "env": {
+                "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+                "OPENAI_BASE_URL": "${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}"
+            }
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "suppress_override_warnings": false,
+            "mounts_json": null,
+            "env": {},
+            "kwargs": {}
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "env": {},
+            "disable": false
+        },
+        "artifacts": [],
+        "job_id": "8fb068bd-14ad-4469-a5f7-9da4cf5e6b82"
+    },
+    "agent_info": {
+        "name": "codex",
+        "version": "0.128.0",
+        "model_info": {
+            "name": "gpt-5.5",
+            "provider": null
+        }
+    },
+    "agent_result": {
+        "n_input_tokens": 29580,
+        "n_cache_tokens": 0,
+        "n_output_tokens": 1161,
+        "cost_usd": 0.18273,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 0.0
+        }
+    },
+    "exception_info": null,
+    "started_at": "2026-05-02T20:15:15.300610Z",
+    "finished_at": "2026-05-02T20:16:08.438379Z",
+    "environment_setup": {
+        "started_at": "2026-05-02T20:15:15.330138Z",
+        "finished_at": "2026-05-02T20:15:19.287618Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-05-02T20:15:19.287672Z",
+        "finished_at": "2026-05-02T20:15:29.080065Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-05-02T20:15:29.080172Z",
+        "finished_at": "2026-05-02T20:15:56.504094Z"
+    },
+    "verifier": {
+        "started_at": "2026-05-02T20:15:56.599927Z",
+        "finished_at": "2026-05-02T20:15:57.643673Z"
+    },
+    "step_results": null
+}
