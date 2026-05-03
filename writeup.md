@@ -184,8 +184,6 @@ With more time, I would extend the task in ways that preserve deterministic scor
 
 - Add a streaming sufficient-statistics variant so agents must compute ridge systems from accumulated statistics rather than materializing every intermediate.
 - Add a small synthetic classification check that verifies the fitted stack can be used for local label prediction.
-- Add more shape and numerical-stability edge cases, especially around nearly singular systems and mixed activation choices.
 - Add a second API surface for deeper FP-style layer construction so the task tests composition beyond the current two required functions.
-- Run more models and reasoning tiers to better map the task's difficulty curve.
 
-I kept those out of this version because the current task already gives useful signal while staying compact, deterministic, and easy to inspect.
+I kept those out of this more elementary version because the current task already gives useful signal while staying compact, deterministic, and easy to inspect.
