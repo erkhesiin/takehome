@@ -2,33 +2,46 @@
 
 Kevin Tamir (amarin)
 
-## Paper
+## Paper Chosen
 
-This task is based on "Closed-form feedback-free learning with forward projection," a recent Forward Projection (FP) paper that proposes fitting neural layers without backpropagation feedback. I chose it because the task sits in a useful middle ground: the core equations are small enough for a verifier to judge deterministically, but recent and unusual enough that a strong model cannot simply lean on a familiar implementation template.
+I chose the Forward Projection paper, "Closed-form feedback-free learning with forward projection." The paper proposes a way to fit neural-network layers without backpropagating errors through the whole model. Instead, each layer receives a locally constructed target membrane potential and is fit with a closed-form ridge-regression solve.
 
-The task focuses on the paper's target-potential and closed-form fitting idea. For each layer, the agent must construct a target membrane potential from the previous activation and label projections:
+I chose this paper because it is recent, specific, and less likely to be saturated in frontier-model training data than common implementation targets like Mamba. The core algorithm is also compact enough to judge deterministically. That made it a good fit for Hillclimb's goal: a task that can challenge strong agents without making the reward arbitrary or dependent on noisy external datasets.
+
+The part of the paper I focused on is the layerwise Forward Projection update. For layer `l`, the implementation constructs a target membrane potential:
 
 ```text
 Z_tilde_l = g(A_prev @ Q_l) + g(Y @ U_l)
 ```
 
-It then fits the layer with ridge regression:
+It then fits the layer by closed-form ridge regression:
 
 ```text
 (A_prev.T @ A_prev + ridge * I) @ W_l = A_prev.T @ Z_tilde_l
 ```
 
-After fitting a layer, the implementation computes `Z_l = A_prev @ W_l`, applies the requested activation, and feeds that activation into the next layer.
+After fitting, it computes `Z_l = A_prev @ W_l`, applies the selected activation, and passes that activation into the next layer.
 
-## Capability
+## Capability Tested
 
-The intended capability is paper-to-code translation for a recent ML algorithm. The task tests whether an agent can extract the algorithmic core from a paper, turn it into numerically stable PyTorch, and respect implementation constraints that are easy to miss under time pressure: no gradient descent, no autograd fitting path, dtype/device preservation, no input mutation, and consistent replay semantics for prediction.
+The environment tests paper-to-code translation for a recent ML algorithm. A successful agent has to read the FP description, identify the algorithmic core, and implement it as stable PyTorch rather than falling back to familiar training loops.
 
-This is not a benchmark of large-scale biomedical reproduction. It is a focused implementation task: can the agent correctly implement the FP equations and API contract in a CPU-only environment with deterministic tests?
+Concretely, the task tests whether the agent can:
+
+- implement the target membrane equation correctly;
+- fit each layer with closed-form ridge regression;
+- process layers sequentially, feeding each activation into the next layer;
+- support the required nonlinearities;
+- preserve tensor dtype/device behavior;
+- avoid mutating inputs;
+- replay a fitted stack for prediction with the same activation convention;
+- avoid optimizers, gradient descent, autograd-based fitting, NumPy, SciPy, and sklearn.
+
+That combination is narrow enough to verify cleanly, but still exposes meaningful mistakes from frontier agents.
 
 ## Agent Task
 
-The agent must create exactly one importable module at:
+The agent is asked to create exactly one file:
 
 ```text
 /solution/forward_projection.py
@@ -37,7 +50,15 @@ The agent must create exactly one importable module at:
 That module must define two top-level functions:
 
 ```python
-def fit_forward_projection(X, Y, Qs, Us, ridge=1e-3, activation="tanh", target_nonlinearity="tanh"):
+def fit_forward_projection(
+    X,
+    Y,
+    Qs,
+    Us,
+    ridge=1e-3,
+    activation="tanh",
+    target_nonlinearity="tanh",
+):
     ...
 
 
@@ -45,46 +66,64 @@ def forward_projection_predict(X, weights, activation="tanh"):
     ...
 ```
 
-`fit_forward_projection` returns a dictionary with exactly `weights`, `membranes`, and `activations`. The `activations` list must start with the original input `X`. `forward_projection_predict` replays a fitted weight stack and returns `(membranes, activations)` with the same activation-list convention.
+`fit_forward_projection` returns a dictionary with exactly three keys: `weights`, `membranes`, and `activations`. The `activations` list must start with the original input `X`, so the expected convention is `[A_0, A_1, ..., A_L]`.
+
+`forward_projection_predict` replays a fitted stack on a new `X` and returns `(membranes, activations)`, using the same activation-list convention.
 
 ## Environment
 
-The Docker image is based on `python:3.11-slim` and installs only:
+The task runs in a CPU-only Docker image based on `python:3.11-slim`. The image installs only:
 
 ```text
 torch==2.3.1
 pytest==8.4.1
 ```
 
-The task is CPU-only with 2 CPUs, 2048 MB memory, no GPUs, and a 120 second verifier timeout. The image creates writable `/solution` and `/logs/verifier` directories and copies the source paper to `/paper/Forward_Projection_Paper.pdf`.
+The container gives the agent a writable `/solution` directory and gives the verifier a `/logs/verifier` directory for reward output. The paper PDF is copied into the environment as:
 
-The Dockerfile also sets conservative CPU threading and dispatch environment variables. This matters because direct LAPACK-backed `torch.linalg.solve` can hit `Illegal instruction` in some CPU-only environments, so the instructions recommend a small PyTorch Gaussian-elimination style linear solver.
+```text
+/paper/Forward_Projection_Paper.pdf
+```
+
+Harbor runs the agent first. If the agent writes `/solution/forward_projection.py`, Harbor then runs the verifier. The task also collects the submitted solution into the trial artifacts, so failing and passing implementations can be inspected later under `jobs/<job-name>/<trial-id>/artifacts/solution/forward_projection.py`.
+
+I kept the environment intentionally small. There are no real datasets, model downloads, GPUs, or training jobs. That keeps failures attributable to the FP implementation itself rather than to infrastructure or data-preparation issues.
+
+The Dockerfile also sets conservative CPU threading and dispatch variables. This mattered because a direct LAPACK-backed `torch.linalg.solve` path can throw `Illegal instruction` on some CPU-only hosts. The instructions therefore recommend a small PyTorch Gaussian-elimination style solve or an equivalent closed-form linear-system solver.
 
 ## Verifier And Reward
 
-The verifier runs `tests/test.sh`, which calls `python /tests/run_verifier.py`. The verifier imports `/solution/forward_projection.py`, executes deterministic pytest cases, and writes the numeric reward to:
+The verifier entrypoint is:
+
+```text
+tasks/forward-projection/tests/test.sh
+```
+
+It calls `python /tests/run_verifier.py`, which imports `/solution/forward_projection.py`, runs pytest, counts passed test calls, and writes the reward to:
 
 ```text
 /logs/verifier/reward.txt
 ```
 
-Reward is partial credit:
+The reward is partial credit:
 
 ```text
 reward = passed_cases / 12
 ```
 
-The 12 deterministic cases cover the required fitting and prediction behavior across multiple layer counts, nonlinearities, dtypes, rank-deficient inputs, high-dimensional systems, large-magnitude saturation cases, soft labels, dtype/device preservation, no input mutation, and the replay requirement that activations include the input as `activations[0]`.
+The 12 deterministic cases cover both fitting and prediction. They check multiple layer counts, all supported nonlinearities, float32 and float64 behavior, rank-deficient inputs, high-dimensional ridge systems, large-magnitude inputs, soft labels, no input mutation, and the requirement that prediction activations include the original input as `activations[0]`.
 
-The tests also statically check that the submitted module uses only `torch` plus the Python standard library and does not import or call optimizer/autograd fitting APIs. That keeps the verifier aligned with the instruction file's closed-form, no-gradient-descent constraint.
+The tests also enforce the task contract around dependencies and approach: the submitted module should use PyTorch and the standard library, not external ML packages or optimizer/autograd fitting paths. This keeps the reward aligned with the paper capability rather than rewarding a generic training loop.
 
 ## Design Decisions And Tradeoffs
 
-I originally explored easier or more culturally cached papers, including "Think Deep, Not Just Long" and Mamba-style implementation work. Those produced saturated or near-saturated rollout scores from frontier models, which made them poor fits for a task meant to expose capability gaps rather than reward boilerplate implementation.
+I originally explored easier or more culturally cached papers, including "Think Deep, Not Just Long" and Mamba-style implementation work. Those produced saturated or near-saturated scores from frontier models, which made them poor fits for a task meant to expose capability gaps.
 
-Forward Projection was a better target because it is recent, algorithmically specific, and cuts against the backprop-first default that models often assume. The task focuses on the core FP equations rather than full dataset reproduction because full biomedical experiments would add noise from data loading, preprocessing, and training infrastructure. The chosen slice keeps the verifier crisp: either the target construction, ridge solve, sequential layer fitting, and replay semantics are correct, or they are not.
+Forward Projection was a better target because it is recent, algorithmically specific, and pushes against the default backprop-first pattern that models often reach for. The task uses the paper's core equations rather than a full paper reproduction because full reproduction would add noise from datasets, preprocessing, experiment configuration, and runtime limits.
 
-The main tradeoff is that the task is narrower than the full paper. That is intentional. A deterministic, numerically focused task gives more interpretable failures than a broad reproduction attempt where failures could come from unrelated environment or dataset issues.
+The main tradeoff is scope. This task does not ask the agent to reproduce the paper's full empirical results. Instead, it isolates the part that matters most for a deterministic RL task: can the agent implement the new learning rule correctly? That narrower scope produces cleaner reward signal and more interpretable failures.
+
+Another tradeoff is the reference-based verifier. It is strict, but the behavior is mathematical and deterministic, so reference comparison is appropriate here. The hidden challenge is not guessing magic constants; it is following the FP equations and API contract carefully.
 
 ## Pull Request Checklist
 
@@ -92,16 +131,13 @@ This mirrors the Terminal-Bench PR template checklist.
 
 - [x] All behavior checked in `tests/` is described in `instruction.md`.
 - [x] All behavior described in `instruction.md` is checked in `tests/`.
-- [x] The `tests/` pytest functions have informative docstrings describing which behavior they check.
-- [x] `instruction.md` was written by a human.
-- [x] `solution/` was written by a human with minimal language-model assistance.
 - [x] The task was run with strong models through Harbor rollout configs for Claude Opus 4.7 high and Codex GPT-5.5 xhigh.
-- [x] The task is hard for the agent to cheat because the verifier imports only the submitted `/solution/forward_projection.py`, checks exact numerical behavior against an independent reference, uses multiple deterministic edge cases, and statically rejects external ML dependencies plus optimizer/autograd fitting APIs.
-- [x] Failing runs are analyzed below, and the failures confirm the task is valid rather than underspecified.
+- [x] The task is hard for the agent to cheat because the verifier imports only the submitted `/solution/forward_projection.py`, checks exact numerical behavior against an independent reference, uses multiple deterministic edge cases, and rejects external ML dependencies plus optimizer/autograd fitting APIs.
+- [x] Failing runs were analyzed, and the failures point to real implementation mistakes rather than underspecification.
 
-The behavior coverage is intentionally two-way. `instruction.md` specifies the exact module path, top-level functions, FP target equation, closed-form ridge equation, sequential activation flow, return keys, activation-list convention, supported nonlinearities, dtype/device preservation, no mutation, CPU compatibility, and no optimizer/autograd fitting path. The tests exercise those requirements through reference comparisons, exact return-shape checks, source-contract checks, dtype/device assertions, mutation checks, and parameterized cases covering all four listed nonlinearities.
+The coverage is intentionally two-way. `instruction.md` specifies the module path, top-level functions, FP target equation, ridge equation, sequential activation flow, return keys, activation-list convention, supported nonlinearities, dtype/device preservation, no mutation, CPU compatibility, and no optimizer/autograd fitting path. The tests exercise those requirements through reference comparisons, return-shape checks, source-contract checks, dtype/device assertions, mutation checks, and parameterized cases covering all listed nonlinearities.
 
-## Agent Run Analysis
+## Sample Rollouts
 
 I ran 10 rollouts each for Claude Code Opus 4.7 high and Codex GPT-5.5 xhigh on the Forward Projection task. The results show that the task is neither trivial nor broken: both strong agents can solve it, but they also produce structured failures that match real implementation pitfalls.
 
@@ -110,7 +146,7 @@ I ran 10 rollouts each for Claude Code Opus 4.7 high and Codex GPT-5.5 xhigh on 
 | Claude Code | `anthropic/claude-opus-4-7`, high | 10 | 0.800 | 4/10 | 6 trials missed prediction replay semantics | 11m 02s |
 | Codex | `gpt-5.5`, xhigh | 10 | 0.933 | 9/10 | 1 trial failed most fitting cases; 1 full-credit artifact had an agent-timeout flag | 35m 58s |
 
-Claude's failures were highly consistent. Six trials scored `0.6667`: they passed all eight fitting cases and failed all four prediction replay cases. The verifier failure was `predict activations has the wrong length`; those implementations returned only post-layer activations instead of `[A_0, A_1, ..., A_L]`. This reflects a real API-composition limitation, not a task flaw, because `instruction.md` explicitly says prediction activations must start with the input `X`, the checked-in oracle follows that convention, and four Claude rollouts implemented it correctly.
+Claude's failures were highly consistent. Six trials scored `0.6667`: they passed all eight fitting cases and failed all four prediction replay cases. The verifier failure was that `predict activations` had the wrong length. Those implementations returned only post-layer activations instead of `[A_0, A_1, ..., A_L]`. This reflects a real API-composition mistake because the instruction explicitly says prediction activations must start with the input `X`, the oracle follows that convention, and four Claude rollouts implemented it correctly.
 
 | Claude trial | Reward | Total duration | Main result |
 | --- | ---: | ---: | --- |
@@ -142,6 +178,14 @@ Codex usually solved the full task but took longer per rollout. Nine of ten tria
 
 The failures are useful because they are local and interpretable. Claude often understood the fitting equation but missed an output convention that matters for layer composition. Codex's single substantive failure preserved replay behavior but got the numerical fitting path wrong. Since the oracle passes, multiple independent model rollouts pass, and the failures cluster around exactly the specified requirements, the evidence supports the task's validity.
 
-## Possible Improvements
+## Future Improvements
 
-A follow-up version could add streaming sufficient-statistics checks so agents must compute ridge systems from accumulated statistics rather than materializing every intermediate. Another extension could require local label decoding from the final activation, or a tiny end-to-end classification experiment using synthetic labels. Those would broaden the task while preserving deterministic verification, but I kept this version focused on the FP core so the reward signal stays clean.
+With more time, I would extend the task in ways that preserve deterministic scoring while increasing coverage of the full paper:
+
+- Add a streaming sufficient-statistics variant so agents must compute ridge systems from accumulated statistics rather than materializing every intermediate.
+- Add a small synthetic classification check that verifies the fitted stack can be used for local label prediction.
+- Add more shape and numerical-stability edge cases, especially around nearly singular systems and mixed activation choices.
+- Add a second API surface for deeper FP-style layer construction so the task tests composition beyond the current two required functions.
+- Run more models and reasoning tiers to better map the task's difficulty curve.
+
+I kept those out of this version because the current task already gives useful signal while staying compact, deterministic, and easy to inspect.
