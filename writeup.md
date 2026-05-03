@@ -4,7 +4,7 @@ Kevin Tamir (amarin)
 
 ## Paper Chosen
 
-I chose the Forward Projection paper, "Closed-form feedback-free learning with forward projection." The paper proposes a way to fit neural-network layers without backpropagating errors through the whole model. Instead, each layer receives a locally constructed target membrane potential and is fit with a closed-form ridge-regression solve.
+I chose the Forward Projection paper, ["Closed-form feedback-free learning with forward projection."](https://arxiv.org/abs/2501.16476) The paper proposes a way to fit neural-network layers without backpropagating errors through the whole model. Instead, each layer receives a locally constructed target membrane potential and is fit with a closed-form ridge-regression solve.
 
 I chose this paper because it is recent, specific, and less likely to be saturated in frontier-model training data than common implementation targets like Mamba. The core algorithm is also compact enough to judge deterministically. That made it a good fit for Hillclimb's goal: a task that can challenge strong agents without making the reward arbitrary or dependent on noisy external datasets.
 
