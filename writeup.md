@@ -186,4 +186,6 @@ With more time, I would extend the task in ways that preserve deterministic scor
 - Add a small synthetic classification check that verifies the fitted stack can be used for local label prediction.
 - Add a second API surface for deeper FP-style layer construction so the task tests composition beyond the current two required functions.
 
-I kept those out of this more elementary version because the current task already gives useful signal while staying compact, deterministic, and easy to inspect.
+I kept those out of this more elementary version because the current task already gives useful signal while staying compact, deterministic, and easy to inspect. 
+
+I also thought of letting the agent see its past failures and try to implement the paper again, but I was uncertain if that was outside the scope of the assignment.
